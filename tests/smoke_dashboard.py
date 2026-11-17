@@ -82,6 +82,14 @@ def text_contrast(page):
     }""", TEXT_SAMPLES)
 
 
+def tip_visible(page):
+    """Wait for the tooltip's fade-in to finish (it is a 0.08 s CSS transition; a fixed pause is flaky over a network)."""
+    try:
+        page.wait_for_function("getComputedStyle(document.querySelector('#tip')).opacity === '1'", timeout=3000)
+    except Exception:
+        pass
+
+
 def select_tab(page, tab):
     page.click('#tabs [data-t="%s"]' % tab)
     page.wait_for_function("document.querySelector('#tabs [data-t=\"%s\"]').getAttribute('aria-selected')==='true'" % tab)
@@ -190,11 +198,11 @@ with sync_playwright() as p:
 
     # 7. tooltips
     select_tab(page, "rides")
-    page.hover("#main svg rect >> nth=30"); page.wait_for_timeout(150)
+    page.hover("#main svg rect >> nth=30"); tip_visible(page)
     check("heatmap cell shows a tooltip with ride counts", page.evaluate("getComputedStyle(document.querySelector('#tip')).opacity") == "1" and "rides" in page.inner_text("#tip"), page.inner_text("#tip"))
     page.mouse.move(5, 5)
     select_tab(page, "stations")
-    page.hover("#main svg circle >> nth=40", force=True); page.wait_for_timeout(150)
+    page.hover("#main svg circle >> nth=40", force=True); tip_visible(page)
     check("station dot shows a tooltip with the station name", page.evaluate("getComputedStyle(document.querySelector('#tip')).opacity") == "1" and "min average" in page.inner_text("#tip"), page.inner_text("#tip"))
     page.mouse.move(5, 5)
 
