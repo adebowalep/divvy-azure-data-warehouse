@@ -1,5 +1,11 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="Divvy Ride Atlas: interactive dashboard of Chicago Divvy bike-share ride duration, stations, routes, payments and rider accounts. Static snapshot built from the same rules as the Azure Synapse warehouse.">
 <title>Divvy Ride Atlas</title>
-<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -10,6 +16,7 @@
   color-scheme:light;
   --bg:#EEF3F8; --surface:#FFFFFF; --ink:#0D1B2B; --muted:#566779; --line:#D8E1EB;
   --sky:#1783BC; --red:#D4202F; --navy:#0F3A5F; --good:#1B8A5A; --warn:#B7791F;
+  --chip:#136E9E;
   --h0:#E6F2FA; --h1:#9CCDE8; --h2:#4A9FCE; --h3:#1C6E9F; --h4:#0B3558;
   --shadow:0 1px 2px rgba(13,27,43,.06),0 6px 20px rgba(13,27,43,.05);
   --font-display:"Barlow Condensed","Arial Narrow",sans-serif;
@@ -18,12 +25,12 @@
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0A1522; --surface:#10233A; --ink:#E9EFF6; --muted:#9AAABD; --line:#1F364F;
-  --sky:#5BC4F2; --red:#FF6F78; --navy:#7DB7E0; --good:#4CD39A; --warn:#F0B454;
+  --sky:#5BC4F2; --red:#FF6F78; --navy:#7DB7E0; --good:#4CD39A; --warn:#F0B454; --chip:#5BC4F2;
   --h0:#12304D; --h1:#1D5A86; --h2:#2F8BBF; --h3:#5BBDEB; --h4:#B9E8FF;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.25); color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0A1522; --surface:#10233A; --ink:#E9EFF6; --muted:#9AAABD; --line:#1F364F;
-  --sky:#5BC4F2; --red:#FF6F78; --navy:#7DB7E0; --good:#4CD39A; --warn:#F0B454;
+  --sky:#5BC4F2; --red:#FF6F78; --navy:#7DB7E0; --good:#4CD39A; --warn:#F0B454; --chip:#5BC4F2;
   --h0:#12304D; --h1:#1D5A86; --h2:#2F8BBF; --h3:#5BBDEB; --h4:#B9E8FF;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.25); color-scheme:dark}
 *{box-sizing:border-box}
@@ -62,7 +69,7 @@ h1 span{color:var(--sky)}
 .cap{font-size:12px;color:var(--muted)}
 .row{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between}
 .chip{font:500 13px var(--font-body);color:var(--ink);background:transparent;border:1.5px solid var(--line);border-radius:999px;padding:5px 12px;cursor:pointer}
-.chip[aria-pressed="true"]{background:var(--sky);border-color:var(--sky);color:#fff}
+.chip[aria-pressed="true"]{background:var(--chip);border-color:var(--chip);color:#fff}
 :root[data-theme="dark"] .chip[aria-pressed="true"]{color:#06182A}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .chip[aria-pressed="true"]{color:#06182A}}
 svg{display:block;width:100%;height:auto;overflow:visible}
@@ -107,6 +114,8 @@ svg text{font-family:var(--font-body);fill:var(--muted);font-size:11px}
 .rt .t i{display:block;height:100%;background:var(--sky);border-radius:3px}
 .rt b{font-family:var(--font-mono);font-weight:500;font-size:13px;text-align:right}
 .rt small{grid-column:3;color:var(--muted);font-size:11px;text-align:right}
+.hint{display:none}
+@media(max-width:620px){.hint{display:block}}
 .lgd{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
 .lgd span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;background:var(--c)}
 .legend i.div{display:block;height:10px;width:200px;border-radius:5px;background:linear-gradient(90deg,var(--red),var(--line),var(--sky))}
@@ -115,13 +124,15 @@ input[type=range]{accent-color:var(--sky);width:150px}
 [hidden]{display:none!important}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
-
+</head>
+<body>
+<noscript><p style="padding:16px;font-family:sans-serif">This dashboard needs JavaScript. It is a static page with no server and no tracking.</p></noscript>
 <div class="wrap">
   <header class="head">
     <div>
       <div class="eyebrow">Divvy bike share · Chicago · 1 Feb 2021 – 31 Jan 2022</div>
       <h1>Divvy <span>Ride Atlas</span></h1>
-      <p class="sub">What 4.6 million trips and 1.9 million payments say about when, where and how long people ride, and what they pay. Built on a star schema in Azure Synapse.</p>
+      <p class="sub">What 4.6 million trips and 1.9 million payments say about when, where and how long people ride, and what they pay. Built on a star schema in Azure Synapse. This page is a static snapshot with no live database behind it.</p>
     </div>
     <div class="filter">
       <span class="eyebrow">Rider type (every chart follows this)</span>
@@ -145,11 +156,11 @@ input[type=range]{accent-color:var(--sky);width:150px}
     <button role="tab" data-t="quality" aria-selected="false">Pipeline &amp; checks</button>
   </nav>
 
-  <main id="main"></main>
+  <main><div id="main" role="tabpanel" aria-labelledby="tab-rides" tabindex="-1"></div></main>
 
   <footer class="foot">
-    <span><b>Sources.</b> Ride and payment figures use the rules of the warehouse SQL (valid ride = 0 to 24 hours; age = completed years; rider type = the rider's current membership flag). Headline numbers, age bands, spend and the usage-vs-spend views are the Azure query results, cross-checked. The heatmap, monthly, map, flow, route, bike-mix and rider views are computed from the same source files with the same rules.</span>
-    <span>Ride data: City of Chicago Divvy trips. Rider, account and payment records are synthetic (course dataset).</span>
+    <span><b>How the numbers were made.</b> Every figure on this page was computed locally with Python from the project's source CSV files, using the same rules as the Azure Synapse warehouse (valid ride = 0 to 24 hours; age = completed years; rider type = the rider's current membership flag). The headline totals, trip-duration issues, age bands, spend by year, spend by age at account start and the usage-vs-spend bands were also observed in Synapse query results and match. The heatmap, monthly, map, flow, route, bike-mix and account views were not run in Synapse. The page does not connect to Azure.</span>
+    <span>Ride data: City of Chicago Divvy trips. Rider, account and payment records are synthetic (course dataset). Membership is the current flag, not history, and payments are not linked to individual trips.</span>
   </footer>
 </div>
 <div class="tip" id="tip" role="status"></div>
@@ -244,7 +255,8 @@ function ridesTab(m){const f=F(),g=document.createElement("div");g.className="gr
   ins.innerHTML=state.heat==="avg"
     ?"For "+WHO[state.f]+", the longest rides start <b>"+DAYLONG[best[0]]+" around "+String(best[1]).padStart(2,"0")+":00</b> ("+fmt1(best[2])+" min). The shortest start <b>"+DAYLONG[worst[0]]+" around "+String(worst[1]).padStart(2,"0")+":00</b> ("+fmt1(worst[2])+" min). Hours with fewer than 300 rides are left out of this comparison."
     :"The busiest hour for "+WHO[state.f]+" is <b>"+DAYLONG[peak[0]]+" at "+String(peak[1]).padStart(2,"0")+":00</b> with "+fmt(peak[2])+" rides in the year.";
-  hp.append(top,sc,ins);g.append(hp);
+  const hint=document.createElement("div");hint.className="cap hint";hint.textContent="Swipe sideways to see the later hours of the day.";
+  hp.append(top,sc,hint,ins);g.append(hp);
   /* monthly */
   const mp=panel("s7","Through the year");
   const ms=Object.keys(f.month).sort(),W=640,Ht=250,L=44,R=44,T=14,B=30,pw=W-L-R,ph=Ht-T-B;
@@ -544,12 +556,19 @@ function ridersTab(m){const f=F(),g=document.createElement("div");g.className="g
 function render(){RS=null;const m=$("#main");m.innerHTML="";hideTip();kpis();
   ({rides:ridesTab,stations:stationsTab,flow:flowTab,money:moneyTab,riders:ridersTab,usage:usageTab,quality:qualityTab})[state.tab](m);
   $("#seg").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.f===state.f));
-  $("#tabs").querySelectorAll("button").forEach(b=>b.setAttribute("aria-selected",b.dataset.t===state.tab))}
+  $("#tabs").querySelectorAll("button").forEach(b=>{const on=b.dataset.t===state.tab;b.id="tab-"+b.dataset.t;b.setAttribute("aria-selected",on);b.setAttribute("aria-controls","main");b.tabIndex=on?0:-1;if(on)$("#main").setAttribute("aria-labelledby",b.id)})}
 $("#seg").addEventListener("click",e=>{const b=e.target.closest("button");if(b){state.f=b.dataset.f;render()}});
-$("#tabs").addEventListener("click",e=>{const b=e.target.closest("button");if(b){state.tab=b.dataset.t;history.replaceState(null,"","#"+state.tab);render()}});
-addEventListener("hashchange",()=>{const t=location.hash.slice(1);if(TABS.includes(t)){state.tab=t;render()}});
+/* Tabs are routed through the URL hash, so Back/Forward move between tabs and every tab has a shareable link. */
+const go=t=>{if(location.hash.slice(1)!==t)location.hash=t};
+$("#tabs").addEventListener("click",e=>{const b=e.target.closest("button");if(b)go(b.dataset.t)});
+$("#tabs").addEventListener("keydown",e=>{const K={ArrowRight:1,ArrowLeft:-1,Home:"first",End:"last"};if(!(e.key in K))return;
+  const bs=[...$("#tabs").querySelectorAll("button")],i=bs.findIndex(b=>b.dataset.t===state.tab),n=e.key==="Home"?0:e.key==="End"?bs.length-1:(i+K[e.key]+bs.length)%bs.length;
+  e.preventDefault();go(bs[n].dataset.t);bs[n].focus()});
+addEventListener("hashchange",()=>{const t=location.hash.slice(1);state.tab=TABS.includes(t)?t:"rides";render()});
 const t0=location.hash.slice(1);if(TABS.includes(t0))state.tab=t0;
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>render());
 new MutationObserver(()=>render()).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
 render();
 </script>
+</body>
+</html>
