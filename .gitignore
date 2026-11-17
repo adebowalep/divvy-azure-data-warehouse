@@ -1,0 +1,15 @@
+# Raw data (about 500 MB) and build output: never commit
+data/
+*.zip
+__pycache__/
+.DS_Store
+# Credentials: never commit
+.env
+*.pem
+
+# Modified copy of Udacity's CC BY-NC-ND starter script: kept locally only
+starter/ProjectDataToPostgres.py
+# Generated copy used for the hosted artifact
+dashboard/artifact.html
+# Personal drafts
+LINKEDIN_POST.md
