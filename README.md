@@ -1,5 +1,13 @@
 # Divvy Bike Share | Azure Data Warehouse & Analytics
 
+[![Azure Synapse Analytics](https://img.shields.io/badge/Azure_Synapse_Analytics-0078D4?style=flat)](https://learn.microsoft.com/azure/synapse-analytics/)
+[![Azure Database for PostgreSQL](https://img.shields.io/badge/Azure_Database_for_PostgreSQL-336791?style=flat)](https://learn.microsoft.com/azure/postgresql/)
+[![Azure Data Lake Storage Gen2](https://img.shields.io/badge/Azure_Data_Lake_Storage_Gen2-0078D4?style=flat)](https://learn.microsoft.com/azure/storage/blobs/data-lake-storage-introduction)
+[![T-SQL](https://img.shields.io/badge/T--SQL-CC2927?style=flat)](https://learn.microsoft.com/sql/t-sql/language-reference)
+[![Python](https://img.shields.io/badge/Python-3776AB?style=flat)](https://www.python.org/)
+[![Parquet](https://img.shields.io/badge/Parquet-2E86C1?style=flat)](https://parquet.apache.org/)
+[![GitHub Pages: Divvy Ride Atlas dashboard](https://img.shields.io/badge/GitHub_Pages-555555?style=flat)](https://adebowalep.github.io/divvy-azure-data-warehouse/dashboard/)
+
 A dimensional data warehouse for Chicago's Divvy bike share, built on Azure and validated with 26 automated checks, plus an interactive dashboard on top of the same analysis.
 
 Divvy publishes millions of trips, but the raw files cannot answer simple questions: when are rides shorter, which stations have the longest rides, does age matter, and what do riders pay? I loaded the data into PostgreSQL, moved it through Azure Synapse and Data Lake Storage, and modelled it as a star schema with two fact tables and three dimensions, using external tables and CETAS on the serverless SQL pool. The warehouse covers **4.6 million trips and 1.9 million payments**.
