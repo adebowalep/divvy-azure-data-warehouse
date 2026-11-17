@@ -8,11 +8,11 @@
 [![Parquet](https://img.shields.io/badge/Parquet-2E86C1?style=flat)](https://parquet.apache.org/)
 [![GitHub Pages: Divvy Ride Atlas dashboard](https://img.shields.io/badge/GitHub_Pages-555555?style=flat)](https://adebowalep.github.io/divvy-azure-data-warehouse/dashboard/)
 
-A dimensional data warehouse for Chicago's Divvy bike share, built on Azure and validated with 26 automated checks, plus an interactive dashboard on top of the same analysis.
+A dimensional data warehouse for Chicago's Divvy bike share, built on Azure and validated with 26 SQL validation checks, plus an interactive dashboard on top of the same analysis.
 
 Divvy publishes millions of trips, but the raw files cannot answer simple questions: when are rides shorter, which stations have the longest rides, does age matter, and what do riders pay? I loaded the data into PostgreSQL, moved it through Azure Synapse and Data Lake Storage, and modelled it as a star schema with two fact tables and three dimensions, using external tables and CETAS on the serverless SQL pool. The warehouse covers **4.6 million trips and 1.9 million payments**.
 
-**Technologies:** Azure Database for PostgreSQL · Azure Synapse Analytics (serverless SQL, copy pipeline) · Azure Data Lake Storage Gen2 · CETAS and Parquet · T-SQL · Python (pandas, NumPy) · HTML, CSS and JavaScript
+**Also used:** pandas and NumPy to aggregate the dashboard data, and plain HTML, CSS and JavaScript for the dashboard itself.
 
 ## Interactive dashboard: Divvy Ride Atlas
 

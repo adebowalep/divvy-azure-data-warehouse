@@ -10,7 +10,7 @@ PostgreSQL · Azure Synapse (serverless SQL) · Data Lake Storage · CETAS · Pa
 
 ## Description
 
-I designed and built a dimensional data warehouse on Azure for Chicago's Divvy bike share, validated it with 26 automated checks, and published an interactive dashboard that explores ride duration, stations, routes, payments and rider accounts. The warehouse turns 4.6 million trips and 1.9 million payments into a star schema with two fact tables and three dimensions.
+I designed and built a dimensional data warehouse on Azure for Chicago's Divvy bike share, validated it with 26 SQL validation checks, and published an interactive dashboard that explores ride duration, stations, routes, payments and rider accounts. The warehouse turns 4.6 million trips and 1.9 million payments into a star schema with two fact tables and three dimensions.
 
 ## Scale
 
