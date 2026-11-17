@@ -108,7 +108,9 @@ for key, vm, pm, rm in [("all", v, p, rs), ("member", v[v.member==True], p[p.mem
     act = {}
     for per in pd.period_range("2013-01", "2022-02", freq="M"):
         a, b = per.start_time, per.end_time
-        act[str(per)] = int(((rr.sd <= b) & ((~valid_end) | (rr.ed >= a))).sum())
+        # active = started by month end AND (still open OR has a valid end date on/after the month start).
+        # Accounts whose end date is before their start date are excluded: their active period is unknowable.
+        act[str(per)] = int(((rr.sd <= b) & (rr.ed.isna() | (valid_end & (rr.ed >= a)))).sum())
     out["f"][key]["active"] = act
     out["f"][key]["invalid_accounts"] = int((rr.ed.notna() & (rr.ed < rr.sd)).sum())
 OUT.parent.mkdir(parents=True, exist_ok=True)
