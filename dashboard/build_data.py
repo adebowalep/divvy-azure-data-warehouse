@@ -1,16 +1,50 @@
-"""Builds data.json for the dashboard from the four source CSVs (same rules as the warehouse SQL).
-Run:  python3 build_data.py <folder with riders/payments/stations/trips CSVs>
-Rules mirrored from the SQL: valid ride = 0 < duration <= 24 h; age = completed years; 
-member flag = rider's CURRENT is_member."""
-import sys, json, numpy as np, pandas as pd
-D = sys.argv[1].rstrip("/") + "/"
+"""Builds dashboard/data.json from the four source CSV files (same rules as the warehouse SQL).
+
+Usage (works from any directory):
+    python3 dashboard/build_data.py /path/to/folder-with-the-four-csvs
+    python3 dashboard/build_data.py /path/to/csvs --out /somewhere/else/data.json
+
+The folder must contain riders.csv, payments.csv, stations.csv and trips.csv (no header row).
+The CSV files are NOT stored in this repository.
+
+Rules mirrored from the SQL: valid ride = 0 < duration <= 24 h; age = completed years;
+member flag = the rider's CURRENT is_member value (no membership history exists in the source).
+"""
+import argparse
+import json
+import sys
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+HERE = Path(__file__).resolve().parent
+REQUIRED = ["riders.csv", "payments.csv", "stations.csv", "trips.csv"]
+
+ap = argparse.ArgumentParser(description="Aggregate the Divvy CSVs into dashboard/data.json")
+ap.add_argument("data_dir", type=Path, help="folder holding riders.csv, payments.csv, stations.csv, trips.csv")
+ap.add_argument("--out", type=Path, default=HERE / "data.json", help="output file (default: dashboard/data.json)")
+args = ap.parse_args()
+
+D = args.data_dir.expanduser().resolve()
+missing = [f for f in REQUIRED if not (D / f).is_file()]
+if missing:
+    sys.exit("error: missing in %s: %s\n(the source CSVs are not part of the repository; see docs/reproduction.md)" % (D, ", ".join(missing)))
+OUT = args.out.expanduser().resolve()
+D = str(D) + "/"
 r = pd.read_csv(D+"riders.csv", header=None, names="rider_id first last address birthday start end is_member".split())
 p = pd.read_csv(D+"payments.csv", header=None, names="payment_id date amount rider_id".split())
 s = pd.read_csv(D+"stations.csv", header=None, names="station_id name lat lon".split(), dtype={"station_id": str})
 t = pd.read_csv(D+"trips.csv", header=None, names="trip_id type start end s_id e_id rider_id".split(), dtype={"s_id": str, "e_id": str})
 r["member"] = r.is_member.astype(str).str.lower().eq("true")
 r["bd"] = pd.to_datetime(r.birthday); r["as"] = pd.to_datetime(r.start)
-def age(b, d): return d.dt.year-b.dt.year-(((d.dt.month<b.dt.month)|((d.dt.month==b.dt.month)&(d.dt.day<b.dt.day))).astype(int))
+def age(b, d):
+    """Completed years between birthday b and date d (pandas Series of datetimes).
+    A 29 Feb birthday counts as 28 Feb in non-leap years, the same as T-SQL DATEADD(year, ...) used by the warehouse."""
+    leap = (d.dt.year % 4 == 0) & ((d.dt.year % 100 != 0) | (d.dt.year % 400 == 0))
+    bday = b.dt.day.where(~((b.dt.month == 2) & (b.dt.day == 29) & ~leap), 28)
+    before = (d.dt.month < b.dt.month) | ((d.dt.month == b.dt.month) & (d.dt.day < bday))
+    return d.dt.year - b.dt.year - before.astype(int)
 
 t["s"] = pd.to_datetime(t.start); t["e"] = pd.to_datetime(t.end)
 t["sec"] = (t.e-t.s).dt.total_seconds()
@@ -77,7 +111,9 @@ for key, vm, pm, rm in [("all", v, p, rs), ("member", v[v.member==True], p[p.mem
         act[str(per)] = int(((rr.sd <= b) & ((~valid_end) | (rr.ed >= a))).sum())
     out["f"][key]["active"] = act
     out["f"][key]["invalid_accounts"] = int((rr.ed.notna() & (rr.ed < rr.sd)).sum())
-json.dump(out, open("data.json","w"), separators=(",",":"))
-print("wrote data.json", round(len(json.dumps(out,separators=(',',':')))/1024), "KB")
+OUT.parent.mkdir(parents=True, exist_ok=True)
+with open(OUT, "w") as fh:
+    json.dump(out, fh, separators=(",", ":"))
+print("wrote", OUT, round(OUT.stat().st_size / 1024), "KB")
 print({k:(out["f"][k]["rides"], out["f"][k]["avg"], out["f"][k]["spend_total"], out["f"][k]["avg_payment"]) for k in out["f"]})
 print("station lat range", s.lat.min(), s.lat.max(), "lon", s.lon.min(), s.lon.max())
