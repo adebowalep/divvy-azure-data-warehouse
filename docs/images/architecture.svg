@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1740 867" width="1740" height="867" font-family="Helvetica, Arial, sans-serif" role="img" aria-labelledby="t d">
+<title id="t">Divvy Azure data warehouse: solution architecture</title>
+<desc id="d">Four CSV files are loaded into Azure PostgreSQL, copied by Synapse Ingest to Azure Data Lake Storage, exposed as four external staging tables in the serverless SQL pool and transformed by five CETAS statements into three dimensions and two fact tables stored as Parquet, then queried and validated with T-SQL. A separate branch aggregates the same CSV files with Python into a static dashboard hosted on GitHub Pages and has no live Azure connection.</desc>
+<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#566779"/></marker></defs>
+<rect width="1740" height="867" fill="#FFFFFF"/>
+<text x="30" y="36" font-size="22" font-weight="700" fill="#0D1B2B" text-anchor="start">Divvy Bike Share: solution architecture</text>
+<rect x="12" y="60" width="1716" height="445" rx="10" fill="#F1F7FC" stroke="#C9DCEC"/>
+<text x="30" y="88" font-size="15" font-weight="700" fill="#0D1B2B" text-anchor="start">Azure data warehouse: built and validated in Azure Synapse</text>
+<text x="30" y="108" font-size="12" font-weight="400" fill="#566779" text-anchor="start">Temporary Udacity cloud-lab resources, since deleted. Evidence is in evidence/.</text>
+<rect x="12" y="545" width="1716" height="254" rx="10" fill="#FBF5EA" stroke="#E7D5B3"/>
+<text x="300" y="573" font-size="15" font-weight="700" fill="#0D1B2B" text-anchor="start">Interactive dashboard: a separate presentation branch with no live Azure connection</text>
+<text x="300" y="593" font-size="12" font-weight="400" fill="#566779" text-anchor="start">Uses the same business rules as the SQL; headline figures were cross-checked against Synapse results.</text>
+<line x1="230" y1="226.0" x2="299" y2="226.0" stroke="#566779" stroke-width="2" marker-end="url(#arr)"/>
+<circle cx="265.0" cy="226.0" r="11" fill="#FFFFFF" stroke="#566779" stroke-width="1.5"/>
+<text x="265.0" y="230.0" font-size="11" font-weight="700" fill="#0D1B2B" text-anchor="middle">1</text>
+<line x1="500" y1="226.0" x2="569" y2="226.0" stroke="#566779" stroke-width="2" marker-end="url(#arr)"/>
+<circle cx="535.0" cy="226.0" r="11" fill="#FFFFFF" stroke="#566779" stroke-width="1.5"/>
+<text x="535.0" y="230.0" font-size="11" font-weight="700" fill="#0D1B2B" text-anchor="middle">2</text>
+<line x1="770" y1="226.0" x2="839" y2="226.0" stroke="#566779" stroke-width="2" marker-end="url(#arr)"/>
+<circle cx="805.0" cy="226.0" r="11" fill="#FFFFFF" stroke="#566779" stroke-width="1.5"/>
+<text x="805.0" y="230.0" font-size="11" font-weight="700" fill="#0D1B2B" text-anchor="middle">3</text>
+<line x1="1040" y1="226.0" x2="1109" y2="226.0" stroke="#566779" stroke-width="2" marker-end="url(#arr)"/>
+<circle cx="1075.0" cy="226.0" r="11" fill="#FFFFFF" stroke="#566779" stroke-width="1.5"/>
+<text x="1075.0" y="230.0" font-size="11" font-weight="700" fill="#0D1B2B" text-anchor="middle">4</text>
+<line x1="1310" y1="226.0" x2="1379" y2="226.0" stroke="#566779" stroke-width="2" marker-end="url(#arr)"/>
+<circle cx="1345.0" cy="226.0" r="11" fill="#FFFFFF" stroke="#566779" stroke-width="1.5"/>
+<text x="1345.0" y="230.0" font-size="11" font-weight="700" fill="#0D1B2B" text-anchor="middle">5</text>
+<line x1="1545" y1="336" x2="1545" y2="381" stroke="#566779" stroke-width="2" marker-end="url(#arr)"/>
+<circle cx="1545.0" cy="359.0" r="11" fill="#FFFFFF" stroke="#566779" stroke-width="1.5"/>
+<text x="1545.0" y="363.0" font-size="11" font-weight="700" fill="#0D1B2B" text-anchor="middle">6</text>
+<line x1="130.0" y1="336" x2="130.0" y2="624" stroke="#566779" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arr)"/>
+<rect x="78.0" y="469.5" width="104" height="22" rx="4" fill="#FFFFFF"/>
+<text x="130.0" y="484.5" font-size="11" font-weight="400" fill="#566779" text-anchor="middle">same files</text>
+<line x1="230" y1="700.0" x2="299" y2="700.0" stroke="#566779" stroke-width="2" marker-end="url(#arr)"/>
+<circle cx="265.0" cy="700.0" r="11" fill="#FFFFFF" stroke="#566779" stroke-width="1.5"/>
+<text x="265.0" y="704.0" font-size="11" font-weight="700" fill="#0D1B2B" text-anchor="middle">A</text>
+<line x1="500" y1="700.0" x2="569" y2="700.0" stroke="#566779" stroke-width="2" marker-end="url(#arr)"/>
+<circle cx="535.0" cy="700.0" r="11" fill="#FFFFFF" stroke="#566779" stroke-width="1.5"/>
+<text x="535.0" y="704.0" font-size="11" font-weight="700" fill="#0D1B2B" text-anchor="middle">B</text>
+<line x1="770" y1="700.0" x2="839" y2="700.0" stroke="#566779" stroke-width="2" marker-end="url(#arr)"/>
+<circle cx="805.0" cy="700.0" r="11" fill="#FFFFFF" stroke="#566779" stroke-width="1.5"/>
+<text x="805.0" y="704.0" font-size="11" font-weight="700" fill="#0D1B2B" text-anchor="middle">C</text>
+<line x1="1040" y1="700.0" x2="1109" y2="700.0" stroke="#566779" stroke-width="2" marker-end="url(#arr)"/>
+<circle cx="1075.0" cy="700.0" r="11" fill="#FFFFFF" stroke="#566779" stroke-width="1.5"/>
+<text x="1075.0" y="704.0" font-size="11" font-weight="700" fill="#0D1B2B" text-anchor="middle">D</text>
+<line x1="1310" y1="700.0" x2="1379" y2="700.0" stroke="#566779" stroke-width="2" marker-end="url(#arr)"/>
+<circle cx="1345.0" cy="700.0" r="11" fill="#FFFFFF" stroke="#566779" stroke-width="1.5"/>
+<text x="1345.0" y="704.0" font-size="11" font-weight="700" fill="#0D1B2B" text-anchor="middle">E</text>
+<rect x="30" y="116" width="200" height="220" rx="8" fill="#FFFFFF" stroke="#566779" stroke-width="2"/>
+<text x="44" y="142" font-size="15" font-weight="700" fill="#0D1B2B" text-anchor="start">Source CSV files</text>
+<text x="44" y="169" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">riders.csv  (75,000)</text>
+<text x="44" y="186" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">trips.csv  (4,584,921)</text>
+<text x="44" y="203" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">payments.csv  (1,946,607)</text>
+<text x="44" y="220" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">stations.csv  (838)</text>
+<text x="44" y="254" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">Real Divvy trips plus</text>
+<text x="44" y="271" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">synthetic rider, account</text>
+<text x="44" y="288" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">and payment data</text>
+<rect x="300" y="116" width="200" height="220" rx="8" fill="#FFFFFF" stroke="#1783BC" stroke-width="2"/>
+<text x="314" y="142" font-size="15" font-weight="700" fill="#0F3A5F" text-anchor="start">Azure Database</text>
+<text x="314" y="161" font-size="15" font-weight="700" fill="#0F3A5F" text-anchor="start">for PostgreSQL</text>
+<text x="314" y="188" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">OLTP source system</text>
+<text x="314" y="222" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">tables: rider, trip,</text>
+<text x="314" y="239" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">payment, station</text>
+<text x="314" y="273" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">loaded with a Python</text>
+<text x="314" y="290" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">script (COPY)</text>
+<rect x="570" y="116" width="200" height="220" rx="8" fill="#FFFFFF" stroke="#1783BC" stroke-width="2"/>
+<text x="584" y="142" font-size="15" font-weight="700" fill="#0F3A5F" text-anchor="start">Azure Synapse</text>
+<text x="584" y="161" font-size="15" font-weight="700" fill="#0F3A5F" text-anchor="start">Ingest</text>
+<text x="584" y="188" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">copy data tool</text>
+<text x="584" y="205" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">one-time pipeline run</text>
+<text x="584" y="239" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">4 copy activities</text>
+<text x="584" y="256" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">PostgreSQL to data lake</text>
+<rect x="840" y="116" width="200" height="220" rx="8" fill="#FFFFFF" stroke="#1783BC" stroke-width="2"/>
+<text x="854" y="142" font-size="15" font-weight="700" fill="#0F3A5F" text-anchor="start">Azure Data Lake</text>
+<text x="854" y="161" font-size="15" font-weight="700" fill="#0F3A5F" text-anchor="start">Storage Gen2</text>
+<text x="854" y="188" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">raw: 4 delimited text files</text>
+<text x="854" y="205" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">public.rider.txt</text>
+<text x="854" y="222" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">public.trip.txt</text>
+<text x="854" y="239" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">public.payment.txt</text>
+<text x="854" y="256" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">public.station.txt</text>
+<text x="854" y="290" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">warehouse/: Parquet output</text>
+<text x="854" y="307" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">written by the CETAS step</text>
+<rect x="1110" y="116" width="200" height="220" rx="8" fill="#FFFFFF" stroke="#1783BC" stroke-width="2"/>
+<text x="1124" y="142" font-size="15" font-weight="700" fill="#0F3A5F" text-anchor="start">Synapse serverless</text>
+<text x="1124" y="161" font-size="15" font-weight="700" fill="#0F3A5F" text-anchor="start">SQL pool (built-in)</text>
+<text x="1124" y="188" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">database: divvy_dw</text>
+<text x="1124" y="222" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">4 external staging tables:</text>
+<text x="1124" y="239" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">staging_rider</text>
+<text x="1124" y="256" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">staging_trip</text>
+<text x="1124" y="273" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">staging_payment</text>
+<text x="1124" y="290" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">staging_station</text>
+<rect x="1380" y="116" width="330" height="220" rx="8" fill="#0F3A5F" stroke="#0F3A5F" stroke-width="2"/>
+<text x="1394" y="142" font-size="15" font-weight="700" fill="#FFFFFF" text-anchor="start">5 CETAS transformations</text>
+<text x="1394" y="169" font-size="12" font-weight="400" fill="#E6F2FA" text-anchor="start" xml:space="preserve">CREATE EXTERNAL TABLE ... AS SELECT</text>
+<text x="1394" y="203" font-size="12" font-weight="400" fill="#E6F2FA" text-anchor="start" xml:space="preserve">Dimensions</text>
+<text x="1394" y="220" font-size="12" font-weight="400" fill="#E6F2FA" text-anchor="start" xml:space="preserve">   dim_rider  ·  dim_station  ·  dim_date</text>
+<text x="1394" y="237" font-size="12" font-weight="400" fill="#E6F2FA" text-anchor="start" xml:space="preserve">Facts</text>
+<text x="1394" y="254" font-size="12" font-weight="400" fill="#E6F2FA" text-anchor="start" xml:space="preserve">   fact_trip  ·  fact_payment</text>
+<text x="1394" y="288" font-size="12" font-weight="400" fill="#E6F2FA" text-anchor="start" xml:space="preserve">Parquet files in warehouse/&lt;table&gt;/run01/</text>
+<text x="1394" y="305" font-size="12" font-weight="400" fill="#E6F2FA" text-anchor="start" xml:space="preserve">a new run folder for every re-run</text>
+<rect x="30" y="625" width="200" height="150" rx="8" fill="#FFFFFF" stroke="#566779" stroke-width="2"/>
+<text x="44" y="651" font-size="15" font-weight="700" fill="#0D1B2B" text-anchor="start">Source CSV files</text>
+<text x="44" y="678" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">the same four files,</text>
+<text x="44" y="695" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">read locally</text>
+<text x="44" y="729" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">not stored in the</text>
+<text x="44" y="746" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">repository</text>
+<rect x="300" y="625" width="200" height="150" rx="8" fill="#FFFFFF" stroke="#B7791F" stroke-width="2"/>
+<text x="314" y="651" font-size="15" font-weight="700" fill="#7A4F0E" text-anchor="start">Python aggregation</text>
+<text x="314" y="678" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">dashboard/build_data.py</text>
+<text x="314" y="695" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">pandas + NumPy</text>
+<text x="314" y="729" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">same business rules as</text>
+<text x="314" y="746" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">the warehouse SQL</text>
+<rect x="570" y="625" width="200" height="150" rx="8" fill="#FFFFFF" stroke="#B7791F" stroke-width="2"/>
+<text x="584" y="651" font-size="15" font-weight="700" fill="#7A4F0E" text-anchor="start">data.json</text>
+<text x="584" y="678" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">aggregates only</text>
+<text x="584" y="695" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">about 311 KB</text>
+<text x="584" y="712" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">no rider-level rows</text>
+<text x="584" y="729" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">split by rider type</text>
+<rect x="840" y="625" width="200" height="150" rx="8" fill="#FFFFFF" stroke="#B7791F" stroke-width="2"/>
+<text x="854" y="651" font-size="15" font-weight="700" fill="#7A4F0E" text-anchor="start">Static page build</text>
+<text x="854" y="678" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">make_dashboard.py +</text>
+<text x="854" y="695" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">template.html</text>
+<text x="854" y="712" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">makes dashboard/index.html</text>
+<text x="854" y="729" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">data embedded</text>
+<rect x="1110" y="625" width="200" height="150" rx="8" fill="#FFFFFF" stroke="#1B8A5A" stroke-width="2"/>
+<text x="1124" y="651" font-size="15" font-weight="700" fill="#115C3B" text-anchor="start">GitHub Pages</text>
+<text x="1124" y="678" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">static hosting from</text>
+<text x="1124" y="695" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">the main branch</text>
+<text x="1124" y="729" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">no database,</text>
+<text x="1124" y="746" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">no backend</text>
+<rect x="1380" y="625" width="330" height="150" rx="8" fill="#FFFFFF" stroke="#1B8A5A" stroke-width="2"/>
+<text x="1394" y="651" font-size="15" font-weight="700" fill="#115C3B" text-anchor="start">Divvy Ride Atlas</text>
+<text x="1394" y="678" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">runs in the visitor&#x27;s browser:</text>
+<text x="1394" y="695" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">rider-type filter, 7 tabs,</text>
+<text x="1394" y="712" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">heatmap, station map, routes,</text>
+<text x="1394" y="729" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">rebalancing, payments, accounts</text>
+<rect x="1110" y="382" width="600" height="99" rx="8" fill="#FFFFFF" stroke="#1783BC" stroke-width="2"/>
+<text x="1124" y="408" font-size="15" font-weight="700" fill="#0F3A5F" text-anchor="start">T-SQL analytics and validation (serverless SQL)</text>
+<text x="1124" y="435" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">07_business_queries.sql: ride duration, stations, routes, spend, usage vs spend</text>
+<text x="1124" y="452" font-size="12" font-weight="400" fill="#0D1B2B" text-anchor="start" xml:space="preserve">06_validation_summary.sql: 26 checks, all passing in the Synapse run</text>
+<rect x="30" y="823" width="22" height="14" rx="3" fill="#FFFFFF" stroke="#566779" stroke-width="2"/>
+<text x="60" y="835" font-size="12" font-weight="400" fill="#566779" text-anchor="start">Source files</text>
+<rect x="176" y="823" width="22" height="14" rx="3" fill="#FFFFFF" stroke="#1783BC" stroke-width="2"/>
+<text x="206" y="835" font-size="12" font-weight="400" fill="#566779" text-anchor="start">Azure service</text>
+<rect x="329" y="823" width="22" height="14" rx="3" fill="#0F3A5F" stroke="#0F3A5F" stroke-width="2"/>
+<text x="359" y="835" font-size="12" font-weight="400" fill="#566779" text-anchor="start">Warehouse tables</text>
+<rect x="503" y="823" width="22" height="14" rx="3" fill="#FFFFFF" stroke="#B7791F" stroke-width="2"/>
+<text x="533" y="835" font-size="12" font-weight="400" fill="#566779" text-anchor="start">Python / local build</text>
+<rect x="705" y="823" width="22" height="14" rx="3" fill="#FFFFFF" stroke="#1B8A5A" stroke-width="2"/>
+<text x="735" y="835" font-size="12" font-weight="400" fill="#566779" text-anchor="start">Static hosting</text>
+<text x="875" y="835" font-size="12" font-weight="400" fill="#566779" text-anchor="start">Numbers 1-6: warehouse steps in order.  Letters A-E: dashboard steps in order.</text>
+</svg>
