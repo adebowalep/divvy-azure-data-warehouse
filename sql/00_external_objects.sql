@@ -2,11 +2,13 @@
 -- Run FIRST, once per lab session, in Synapse Studio -> Develop -> New SQL script,
 -- connected to the BUILT-IN serverless SQL pool.
 --
--- ONLY EDIT THE TWO PLACEHOLDERS in the data source below:
---     <container>        e.g. the file system the Ingest wizard wrote to
---     <storage_account>  your lab's linked storage account
--- Both are shown in Synapse Studio -> Data -> Linked. Do not copy them from
--- screenshots or examples; they change every lab session.
+-- ONLY EDIT THE TWO PLACEHOLDERS in the data source below (step 2). The script will not run until you do.
+--     <container>        the file system the Ingest wizard wrote the four files to
+--     <storage_account>  the storage account of your Synapse workspace
+-- Both are shown in Synapse Studio -> Data -> Linked. They are different in every environment.
+-- In the recorded run the container was "divvy" and the four files sat at its root
+-- (public.rider.txt, public.trip.txt, public.payment.txt, public.station.txt); that
+-- storage account no longer exists. The staging scripts assume that same layout.
 --
 -- Auth: no credential is created. Serverless reads/writes the lake with the
 -- signed-in user's Azure AD identity. That user needs "Storage Blob Data
@@ -23,7 +25,7 @@
 --    AND for writing CETAS output.
 IF NOT EXISTS (SELECT * FROM sys.external_data_sources WHERE name = 'divvy_storage')
     CREATE EXTERNAL DATA SOURCE [divvy_storage]
-    WITH (LOCATION = 'abfss://divvy@divvystorage.dfs.core.windows.net');
+    WITH (LOCATION = 'abfss://<container>@<storage_account>.dfs.core.windows.net');
 GO
 
 -- 3. How to read the extracted text files.
