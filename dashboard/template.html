@@ -1,0 +1,555 @@
+<title>Divvy Ride Atlas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout idea: transit-signage header and KPI strip, one filter that drives every chart, five tabs, one insight sentence per panel.
+   Palette: Chicago-flag sky blue and red on cool neutrals. */
+:root{
+  color-scheme:light;
+  --bg:#EEF3F8; --surface:#FFFFFF; --ink:#0D1B2B; --muted:#566779; --line:#D8E1EB;
+  --sky:#1783BC; --red:#D4202F; --navy:#0F3A5F; --good:#1B8A5A; --warn:#B7791F;
+  --h0:#E6F2FA; --h1:#9CCDE8; --h2:#4A9FCE; --h3:#1C6E9F; --h4:#0B3558;
+  --shadow:0 1px 2px rgba(13,27,43,.06),0 6px 20px rgba(13,27,43,.05);
+  --font-display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --font-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0A1522; --surface:#10233A; --ink:#E9EFF6; --muted:#9AAABD; --line:#1F364F;
+  --sky:#5BC4F2; --red:#FF6F78; --navy:#7DB7E0; --good:#4CD39A; --warn:#F0B454;
+  --h0:#12304D; --h1:#1D5A86; --h2:#2F8BBF; --h3:#5BBDEB; --h4:#B9E8FF;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.25); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0A1522; --surface:#10233A; --ink:#E9EFF6; --muted:#9AAABD; --line:#1F364F;
+  --sky:#5BC4F2; --red:#FF6F78; --navy:#7DB7E0; --good:#4CD39A; --warn:#F0B454;
+  --h0:#12304D; --h1:#1D5A86; --h2:#2F8BBF; --h3:#5BBDEB; --h4:#B9E8FF;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.25); color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.45;margin:0;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--font-display);margin:0;text-wrap:balance;letter-spacing:.01em}
+.head{display:flex;flex-wrap:wrap;gap:16px 28px;align-items:flex-end;justify-content:space-between;
+  border-bottom:4px solid var(--ink);padding-bottom:14px;position:relative}
+.head::after{content:"";position:absolute;left:0;bottom:-4px;width:120px;height:4px;background:var(--red)}
+.eyebrow{font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-size:clamp(40px,7vw,72px);line-height:.95;font-weight:700;margin-top:6px}
+h1 span{color:var(--sky)}
+.sub{color:var(--muted);max-width:52ch;margin-top:8px}
+.filter{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.seg{display:inline-flex;border:2px solid var(--ink);border-radius:999px;overflow:hidden;background:var(--surface)}
+.seg button{font:600 14px var(--font-body);color:var(--ink);background:transparent;border:0;padding:8px 16px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.seg button:focus-visible,.tabs button:focus-visible,.chip:focus-visible,input:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi{background:var(--surface);border-radius:10px;box-shadow:var(--shadow);padding:14px 16px;border-top:4px solid var(--sky);min-width:0}
+.kpi:nth-child(even){border-top-color:var(--red)}
+.kpi .l{font-family:var(--font-mono);font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.kpi .v{font-family:var(--font-display);font-size:38px;font-weight:700;line-height:1.05;font-variant-numeric:tabular-nums}
+.kpi .n{font-size:12px;color:var(--muted)}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:2px solid var(--line)}
+.tabs button{font:600 15px var(--font-body);background:transparent;border:0;color:var(--muted);padding:10px 14px;cursor:pointer;border-bottom:4px solid transparent;margin-bottom:-2px}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--red)}
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px}
+.panel{background:var(--surface);border-radius:10px;box-shadow:var(--shadow);padding:16px 18px;min-width:0;display:flex;flex-direction:column;gap:10px}
+.s12{grid-column:span 12}.s8{grid-column:span 8}.s7{grid-column:span 7}.s6{grid-column:span 6}.s5{grid-column:span 5}.s4{grid-column:span 4}
+@media(max-width:900px){.s8,.s7,.s6,.s5,.s4{grid-column:span 12}}
+.panel h2{font-size:24px;font-weight:700}
+.panel .ins{font-size:14px;color:var(--ink);border-left:4px solid var(--red);padding-left:10px}
+.panel .ins b{font-weight:600}
+.cap{font-size:12px;color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between}
+.chip{font:500 13px var(--font-body);color:var(--ink);background:transparent;border:1.5px solid var(--line);border-radius:999px;padding:5px 12px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--sky);border-color:var(--sky);color:#fff}
+:root[data-theme="dark"] .chip[aria-pressed="true"]{color:#06182A}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .chip[aria-pressed="true"]{color:#06182A}}
+svg{display:block;width:100%;height:auto;overflow:visible}
+svg text{font-family:var(--font-body);fill:var(--muted);font-size:11px}
+.scroll{overflow-x:auto}
+.scroll>svg{min-width:560px}
+.axis{stroke:var(--line);stroke-width:1}
+.legend{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.legend i{display:block;height:10px;width:160px;border-radius:5px;background:linear-gradient(90deg,var(--h0),var(--h1),var(--h2),var(--h3),var(--h4))}
+.bars{display:flex;flex-direction:column;gap:7px}
+.bar{display:grid;grid-template-columns:minmax(78px,110px) 1fr minmax(64px,auto);gap:10px;align-items:center;font-size:13px;cursor:default}
+.bar .t{height:16px;background:var(--bg);border-radius:4px;overflow:hidden}
+.bar .t i{display:block;height:100%;background:var(--sky);border-radius:4px;transition:width .5s}
+.bar.red .t i{background:var(--red)}
+.bar b{font-family:var(--font-mono);font-weight:500;font-size:12px;text-align:right}
+.bar:hover .t i{filter:brightness(1.15)}
+.mapwrap{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+.list{display:flex;flex-direction:column;gap:2px;max-height:520px;overflow:auto}
+.li{display:grid;grid-template-columns:24px 1fr auto;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;align-items:center;font-size:13px;border:0;background:transparent;color:var(--ink);text-align:left;font-family:var(--font-body)}
+.li:hover,.li[aria-current="true"]{background:var(--bg)}
+.li .r{font-family:var(--font-mono);font-size:11px;color:var(--muted)}
+.li small{display:block;color:var(--muted);font-size:11px}
+.li b{font-family:var(--font-mono);font-weight:500;font-size:13px}
+.tip{position:fixed;z-index:50;pointer-events:none;background:var(--ink);color:var(--bg);padding:7px 10px;border-radius:6px;font-size:12px;line-height:1.35;max-width:240px;box-shadow:0 6px 18px rgba(0,0,0,.25);opacity:0;transition:opacity .08s}
+.tip b{font-weight:600}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.step{border:1.5px solid var(--line);border-radius:8px;padding:10px 12px;position:relative}
+.step b{font-family:var(--font-display);font-size:20px;display:block}
+.step span{font-size:12px;color:var(--muted)}
+.checks{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px}
+.check{display:flex;gap:8px;align-items:center;border:1.5px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13px}
+.check i{font-style:normal;font-family:var(--font-mono);font-size:11px;color:#fff;background:var(--good);border-radius:4px;padding:2px 6px}
+:root[data-theme="dark"] .check i{color:#05281B}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .check i{color:#05281B}}
+.stack{display:flex;height:26px;border-radius:6px;overflow:hidden;background:var(--bg)}
+.stack i{display:block;height:100%}
+.rt{display:grid;grid-template-columns:24px minmax(0,1fr) auto;gap:4px 10px;align-items:center;padding:6px 4px;font-size:13px}
+.rt .r{font-family:var(--font-mono);font-size:11px;color:var(--muted)}
+.rt .n{overflow-wrap:anywhere}
+.rt .n i{font-style:normal;color:var(--muted)}
+.rt .t{grid-column:2;height:6px;background:var(--bg);border-radius:3px;overflow:hidden}
+.rt .t i{display:block;height:100%;background:var(--sky);border-radius:3px}
+.rt b{font-family:var(--font-mono);font-weight:500;font-size:13px;text-align:right}
+.rt small{grid-column:3;color:var(--muted);font-size:11px;text-align:right}
+.lgd{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.lgd span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;background:var(--c)}
+.legend i.div{display:block;height:10px;width:200px;border-radius:5px;background:linear-gradient(90deg,var(--red),var(--line),var(--sky))}
+.foot{font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:4px}
+input[type=range]{accent-color:var(--sky);width:150px}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="head">
+    <div>
+      <div class="eyebrow">Divvy bike share · Chicago · 1 Feb 2021 – 31 Jan 2022</div>
+      <h1>Divvy <span>Ride Atlas</span></h1>
+      <p class="sub">What 4.6 million trips and 1.9 million payments say about when, where and how long people ride, and what they pay. Built on a star schema in Azure Synapse.</p>
+    </div>
+    <div class="filter">
+      <span class="eyebrow">Rider type (every chart follows this)</span>
+      <div class="seg" role="group" aria-label="Rider type" id="seg">
+        <button data-f="all" aria-pressed="true">All riders</button>
+        <button data-f="member" aria-pressed="false">Members</button>
+        <button data-f="casual" aria-pressed="false">Casual</button>
+      </div>
+    </div>
+  </header>
+
+  <section class="kpis" id="kpis" aria-label="Headline numbers"></section>
+
+  <nav class="tabs" role="tablist" id="tabs" aria-label="Dashboard sections">
+    <button role="tab" data-t="rides" aria-selected="true">Ride time</button>
+    <button role="tab" data-t="stations" aria-selected="false">Stations</button>
+    <button role="tab" data-t="flow" aria-selected="false">Flow &amp; routes</button>
+    <button role="tab" data-t="money" aria-selected="false">Money</button>
+    <button role="tab" data-t="riders" aria-selected="false">Riders</button>
+    <button role="tab" data-t="usage" aria-selected="false">Usage vs spend</button>
+    <button role="tab" data-t="quality" aria-selected="false">Pipeline &amp; checks</button>
+  </nav>
+
+  <main id="main"></main>
+
+  <footer class="foot">
+    <span><b>Sources.</b> Ride and payment figures use the rules of the warehouse SQL (valid ride = 0 to 24 hours; age = completed years; rider type = the rider's current membership flag). Headline numbers, age bands, spend and the usage-vs-spend views are the Azure query results, cross-checked. The heatmap, monthly, map, flow, route, bike-mix and rider views are computed from the same source files with the same rules.</span>
+    <span>Ride data: City of Chicago Divvy trips. Rider, account and payment records are synthetic (course dataset).</span>
+  </footer>
+</div>
+<div class="tip" id="tip" role="status"></div>
+
+<script>
+const DATA = __DATA__;
+const USAGE = {
+  rides:[["Under 1 / month",40506,9.85],["1 to 3",6322,5.90],["3 to 6",5143,6.91],["6 to 11",6089,6.96],["11 or more",12252,6.85]],
+  mins:[["No riding",391631,9.98],["Under 30 min",68162,7.03],["30 to 59 min",47847,7.00],["60 to 119 min",56546,7.01],["120+ min",162803,6.86]]
+};
+const CHECKS=[["Row counts","5"],["No duplicate keys","5"],["No orphan keys","6"],["Payments parsed, total $19,457,105.25","2"],["Duration flags match","5"],["Ages hand-checked","3"]];
+const DAYS=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"], DAYLONG=["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const state={f:"all",tab:"rides",heat:"avg",role:"start",sort:"long",minRides:100,sel:null,flowMin:500,flowMode:"short",routeMode:"p2p"};
+const TABS=["rides","stations","flow","money","riders","usage","quality"];
+const $=(s,r=document)=>r.querySelector(s);
+const NS="http://www.w3.org/2000/svg";
+const fmt=n=>Math.round(n).toLocaleString("en-US");
+const fmt1=n=>n.toFixed(1);
+const usd=(n,d=0)=>"$"+n.toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d});
+const usdM=n=>n>=1e6?"$"+(n/1e6).toFixed(2)+"M":n>=1e3?"$"+(n/1e3).toFixed(0)+"k":"$"+n.toFixed(0);
+const mlabel=ym=>MON[+ym.slice(5)-1]+" "+ym.slice(2,4);
+function svg(tag,attrs={},kids=[]){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);
+  kids.forEach(c=>e.append(c));return e}
+function css(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim()}
+function hex(h){h=h.replace("#","");return[0,2,4].map(i=>parseInt(h.slice(i,i+2),16))}
+let RS=null;
+function ramp(t){t=Math.max(0,Math.min(1,t));const s=RS||(RS=["--h0","--h1","--h2","--h3","--h4"].map(v=>hex(css(v))));
+  const x=t*4,i=Math.min(3,Math.floor(x)),f=x-i;return"rgb("+[0,1,2].map(k=>Math.round(s[i][k]+(s[i+1][k]-s[i][k])*f)).join(",")+")"}
+const tip=$("#tip");
+function showTip(ev,html){tip.innerHTML=html;tip.style.opacity=1;const w=tip.offsetWidth,h=tip.offsetHeight;
+  let x=ev.clientX+14,y=ev.clientY+14;if(x+w>innerWidth-8)x=ev.clientX-w-14;if(y+h>innerHeight-8)y=ev.clientY-h-14;
+  tip.style.left=Math.max(8,x)+"px";tip.style.top=Math.max(8,y)+"px"}
+function hideTip(){tip.style.opacity=0}
+function hover(node,html){node.addEventListener("pointermove",e=>showTip(e,typeof html==="function"?html():html));node.addEventListener("pointerleave",hideTip)}
+const F=()=>DATA.f[state.f];
+const WHO={all:"all riders",member:"members",casual:"casual riders"};
+
+/* KPI strip */
+let kp={};
+function kpis(){const f=F(),m=DATA.meta;
+  const items=[["Rides analysed",f.rides,fmt,"of "+fmt(m.trips_total)+" trips; bad durations excluded"],
+    ["Average ride",f.avg,v=>fmt1(v)+" min","mean of valid rides"],
+    ["Total payments",f.spend_total,v=>usdM(v),fmt(f.payments)+" payments, 2013 to Feb 2022"],
+    ["Average payment",f.avg_payment,v=>usd(v,2),"per monthly payment"],
+    ["Riders",f.riders,fmt,fmt(m.stations)+" stations in the network"]];
+  const box=$("#kpis");box.innerHTML="";
+  items.forEach(([l,v,fn,n],i)=>{const d=document.createElement("div");d.className="kpi";
+    d.innerHTML='<div class="l">'+l+'</div><div class="v"></div><div class="n">'+n+'</div>';box.append(d);
+    const out=$(".v",d),from=kp[i]??0,to=v,t0=performance.now();kp[i]=to;
+    const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if(reduce){out.textContent=fn(to);return}
+    (function step(t){const k=Math.min(1,(t-t0)/450),e=1-Math.pow(1-k,3);out.textContent=fn(from+(to-from)*e);if(k<1)requestAnimationFrame(step)})(t0)})}
+
+/* shared helpers */
+function panel(cls,title,extra=""){const p=document.createElement("section");p.className="panel "+cls;
+  p.innerHTML="<h2>"+title+"</h2>"+extra;return p}
+function chipRow(opts,cur,fn){const r=document.createElement("div");r.style.display="flex";r.style.gap="6px";r.style.flexWrap="wrap";
+  opts.forEach(([k,l])=>{const b=document.createElement("button");b.className="chip";b.textContent=l;b.setAttribute("aria-pressed",k===cur);
+    b.onclick=()=>fn(k);r.append(b)});return r}
+function hbars(rows,{max,fmtv=fmt1,suffix="",red=false,tipfn}){const w=document.createElement("div");w.className="bars";
+  rows.forEach(r=>{const d=document.createElement("div");d.className="bar"+(red?" red":"");
+    d.innerHTML='<span>'+r.l+'</span><div class="t"><i style="width:0"></i></div><b>'+fmtv(r.v)+suffix+'</b>';
+    w.append(d);requestAnimationFrame(()=>{$("i",d).style.width=Math.max(1,r.v/max*100)+"%"});
+    if(tipfn)hover(d,()=>tipfn(r))});return w}
+
+/* RIDE TIME */
+function heatmap(){const f=F(),H=f.heat,W=760,L=44,T=8,cw=(W-L-6)/24,ch=30,Hh=T+7*ch+22;
+  const vals=H.flat().map(c=>state.heat==="avg"?c[1]:c[0]).filter(v=>v>0);
+  const lo=state.heat==="avg"?Math.min(...vals):0,hi=Math.max(...vals);
+  const s=svg("svg",{viewBox:"0 0 "+W+" "+Hh,role:"img","aria-label":"Heatmap of rides by weekday and hour"});
+  for(let d=0;d<7;d++){s.append(svg("text",{x:L-8,y:T+d*ch+ch/2+4,"text-anchor":"end"},[document.createTextNode(DAYS[d])]));
+    for(let h=0;h<24;h++){const c=H[d][h],v=state.heat==="avg"?c[1]:c[0];
+      const r=svg("rect",{x:L+h*cw+1,y:T+d*ch+1,width:cw-2,height:ch-2,rx:3,fill:c[0]?ramp((v-lo)/(hi-lo||1)):css("--bg")});
+      hover(r,()=>"<b>"+DAYLONG[d]+", "+String(h).padStart(2,"0")+":00</b><br>"+fmt(c[0])+" rides<br>"+(c[0]?fmt1(c[1])+" min average":"no rides"));s.append(r)}}
+  for(let h=0;h<24;h+=3)s.append(svg("text",{x:L+h*cw+cw/2,y:Hh-4,"text-anchor":"middle"},[document.createTextNode(String(h).padStart(2,"0")+":00")]));
+  return{node:s,lo,hi}}
+function ridesTab(m){const f=F(),g=document.createElement("div");g.className="grid";
+  /* heatmap */
+  const hp=panel("s12","When rides start, and how long they last");
+  const top=document.createElement("div");top.className="row";
+  top.append(chipRow([["avg","Average minutes"],["count","Number of rides"]],state.heat,k=>{state.heat=k;render()}));
+  const {node,lo,hi}=heatmap();
+  const lg=document.createElement("div");lg.className="legend";
+  lg.innerHTML="<span>"+(state.heat==="avg"?fmt1(lo)+" min":fmt(lo))+"</span><i></i><span>"+(state.heat==="avg"?fmt1(hi)+" min":fmt(hi))+"</span>";
+  top.append(lg);
+  const sc=document.createElement("div");sc.className="scroll";sc.append(node);
+  const H=f.heat;let best=[0,0,0],worst=[0,0,1e9];
+  H.forEach((r,d)=>r.forEach((c,h)=>{if(c[0]>=300){if(c[1]>best[2])best=[d,h,c[1]];if(c[1]<worst[2])worst=[d,h,c[1]]}}));
+  let peak=[0,0,0];H.forEach((r,d)=>r.forEach((c,h)=>{if(c[0]>peak[2])peak=[d,h,c[0]]}));
+  const ins=document.createElement("div");ins.className="ins";
+  ins.innerHTML=state.heat==="avg"
+    ?"For "+WHO[state.f]+", the longest rides start <b>"+DAYLONG[best[0]]+" around "+String(best[1]).padStart(2,"0")+":00</b> ("+fmt1(best[2])+" min). The shortest start <b>"+DAYLONG[worst[0]]+" around "+String(worst[1]).padStart(2,"0")+":00</b> ("+fmt1(worst[2])+" min). Hours with fewer than 300 rides are left out of this comparison."
+    :"The busiest hour for "+WHO[state.f]+" is <b>"+DAYLONG[peak[0]]+" at "+String(peak[1]).padStart(2,"0")+":00</b> with "+fmt(peak[2])+" rides in the year.";
+  hp.append(top,sc,ins);g.append(hp);
+  /* monthly */
+  const mp=panel("s7","Through the year");
+  const ms=Object.keys(f.month).sort(),W=640,Ht=250,L=44,R=44,T=14,B=30,pw=W-L-R,ph=Ht-T-B;
+  const maxR=Math.max(...ms.map(k=>f.month[k][0])),avgs=ms.map(k=>f.month[k][1]),amin=Math.floor(Math.min(...avgs)-2),amax=Math.ceil(Math.max(...avgs)+2);
+  const s=svg("svg",{viewBox:"0 0 "+W+" "+Ht,role:"img","aria-label":"Rides and average duration by month"});
+  [0,.5,1].forEach(t=>{const y=T+ph*(1-t);s.append(svg("line",{x1:L,x2:W-R,y1:y,y2:y,class:"axis"}));
+    s.append(svg("text",{x:L-6,y:y+4,"text-anchor":"end"},[document.createTextNode(fmt(maxR*t/1000)+"k")]));
+    s.append(svg("text",{x:W-R+6,y:y+4},[document.createTextNode(fmt1(amin+(amax-amin)*t))]))});
+  const bw=pw/ms.length;let pts=[];
+  ms.forEach((k,i)=>{const [n,a]=f.month[k],h=ph*n/maxR,x=L+i*bw;
+    const r=svg("rect",{x:x+bw*.18,y:T+ph-h,width:bw*.64,height:h,rx:3,fill:css("--sky"),opacity:.85});s.append(r);
+    s.append(svg("text",{x:x+bw/2,y:Ht-10,"text-anchor":"middle"},[document.createTextNode(mlabel(k))]));
+    const py=T+ph*(1-(a-amin)/(amax-amin));pts.push([x+bw/2,py]);
+    const hit=svg("rect",{x,y:T,width:bw,height:ph,fill:"transparent"});
+    hover(hit,()=>"<b>"+mlabel(k)+"</b><br>"+fmt(n)+" rides<br>"+fmt1(a)+" min average");s.append(hit)});
+  s.append(svg("polyline",{points:pts.map(p=>p.join(",")).join(" "),fill:"none",stroke:css("--red"),"stroke-width":2.5,"stroke-linejoin":"round"}));
+  pts.forEach(p=>s.append(svg("circle",{cx:p[0],cy:p[1],r:3.5,fill:css("--surface"),stroke:css("--red"),"stroke-width":2,"pointer-events":"none"})));
+  s.append(svg("text",{x:L,y:8},[document.createTextNode("Bars: rides (left)")]));
+  s.append(svg("text",{x:W-R,y:8,"text-anchor":"end",fill:css("--red")},[document.createTextNode("Line: average minutes (right)")]));
+  const bestM=ms.reduce((a,k)=>f.month[k][0]>f.month[a][0]?k:a,ms[0]),longM=ms.reduce((a,k)=>f.month[k][1]>f.month[a][1]?k:a,ms[0]);
+  const mi=document.createElement("div");mi.className="ins";
+  mi.innerHTML="Ridership peaks in <b>"+mlabel(bestM)+"</b> ("+fmt(f.month[bestM][0])+" rides). Rides run longest in <b>"+mlabel(longM)+"</b> ("+fmt1(f.month[longM][1])+" min).";
+  mp.append(s,mi);g.append(mp);
+  /* age + type */
+  const ap=panel("s5","Does age change ride length?");
+  const rows=DATA.meta.labels.map((l,i)=>({l,v:f.ages[i][1],n:f.ages[i][0]}));
+  ap.append(hbars(rows,{max:30,suffix:" min",tipfn:r=>"<b>"+r.l+"</b><br>"+fmt(r.n)+" rides<br>"+fmt1(r.v)+" min average"}));
+  const lo2=Math.min(...rows.map(r=>r.v)),hi2=Math.max(...rows.map(r=>r.v));
+  const ai=document.createElement("div");ai.className="ins";
+  ai.innerHTML="Age barely matters: every band sits between <b>"+fmt1(lo2)+"</b> and <b>"+fmt1(hi2)+" minutes</b>. Age is calculated on the day of each ride.";
+  const tt=Object.entries(f.types).sort((a,b)=>b[1][0]-a[1][0]);
+  const tl=document.createElement("div");tl.className="cap";
+  tl.innerHTML="By bike: "+tt.map(([k,v])=>k.replace("_"," ")+" "+fmt1(v[1])+" min ("+fmt(v[0])+")").join(" · ");
+  ap.append(ai,tl);g.append(ap);
+  /* commute pattern */
+  const cp=panel("s6","Commute pattern: weekdays vs weekends");
+  const cc=commuteChart(f);cp.append(cc.node);
+  const cl=document.createElement("div");cl.className="lgd";cl.innerHTML='<span style="--c:var(--red)">Weekdays (Mon to Fri)</span><span style="--c:var(--sky)">Weekends</span>';cp.append(cl);
+  const ci=document.createElement("div");ci.className="ins";
+  ci.innerHTML="Share of each group's rides by start hour. Weekday rides peak at <b>"+String(cc.pk[0]).padStart(2,"0")+":00</b>, with a morning bump near <b>"+String(cc.am).padStart(2,"0")+":00</b>. Weekend rides peak at <b>"+String(cc.pk[1]).padStart(2,"0")+":00</b> and spread through the afternoon.";
+  cp.append(ci);g.append(cp);
+  /* distribution */
+  const dp=panel("s6","How long do rides last?");
+  const dh=f.dur_hist,dt=dh.counts.reduce((a,b)=>a+b,0);
+  const dl=dh.counts.map((_,i)=>i===dh.counts.length-1?dh.edges[i]+"+":dh.edges[i]+"-"+dh.edges[i+1]);
+  dp.append(columns(dh.counts.map((n,i)=>({l:dl[i],v:n/dt*100,n})),{fmtv:v=>v.toFixed(0)+"%",tipfn:i=>"<b>"+i.l+" min</b><br>"+fmt(i.n)+" rides<br>"+i.v.toFixed(1)+"% of rides"}));
+  const u10=dh.counts.slice(0,5).reduce((a,b)=>a+b,0)/dt*100,o45=dh.counts.slice(11).reduce((a,b)=>a+b,0)/dt*100;
+  const di=document.createElement("div");di.className="ins";
+  di.innerHTML="Minutes per ride, in bins. <b>"+u10.toFixed(0)+"%</b> of "+WHO[state.f]+"' rides last under 10 minutes and <b>"+o45.toFixed(0)+"%</b> run past 45. A few very long rides lift the average above the typical ride.";
+  dp.append(di);g.append(dp);
+  /* bike mix */
+  const bp=panel("s12","Which bikes people ride, month by month");
+  const bm=mixChart(f);bp.append(bm.legend,bm.node);
+  const bi=document.createElement("div");bi.className="ins";bi.innerHTML=bm.text;bp.append(bi);g.append(bp);
+  m.append(g)}
+
+/* STATIONS */
+const BOUNDS={la0:41.64,la1:42.07,lo0:-87.84,lo1:-87.52};
+const LAND=[["The Loop",41.8819,-87.6278],["Wrigley Field",41.9484,-87.6553],["Hyde Park",41.7943,-87.5907],["Navy Pier",41.8917,-87.6086],["Rainbow Beach",41.7637,-87.5667]];
+function stationsTab(m){const f=F(),all=f.stations[state.role];
+  const inB=all.filter(s=>s[2]>=BOUNDS.la0&&s[2]<=BOUNDS.la1&&s[3]>=BOUNDS.lo0&&s[3]<=BOUNDS.lo1);
+  const out=all.length-inB.length;
+  const g=document.createElement("div");g.className="grid";
+  const mp=panel("s7","Every station, sized by rides and colored by ride length");
+  const ctl=document.createElement("div");ctl.className="row";
+  ctl.append(chipRow([["start","Rides starting here"],["end","Rides ending here"]],state.role,k=>{state.role=k;state.sel=null;render()}));
+  const lg=document.createElement("div");lg.className="legend";lg.innerHTML="<span>10 min</span><i></i><span>40+ min</span>";ctl.append(lg);
+  const W=380,H=700,sx=lo=>(lo-BOUNDS.lo0)/(BOUNDS.lo1-BOUNDS.lo0)*W,sy=la=>(BOUNDS.la1-la)/(BOUNDS.la1-BOUNDS.la0)*H;
+  const s=svg("svg",{viewBox:"0 0 "+W+" "+H,role:"img","aria-label":"Map of stations"});
+  s.style.maxHeight="640px";s.style.margin="0 auto";s.style.maxWidth="360px";
+  s.append(svg("rect",{x:0,y:0,width:W,height:H,rx:8,fill:css("--bg")}));
+  s.append(svg("rect",{x:W-52,y:0,width:52,height:H,fill:css("--sky"),opacity:.08}));
+  s.append(svg("text",{x:W-22,y:H/2,"text-anchor":"middle",transform:"rotate(90 "+(W-22)+" "+H/2+")",style:"letter-spacing:.3em;font-size:12px"},[document.createTextNode("LAKE MICHIGAN")]));
+  const maxN=Math.max(...inB.map(x=>x[4])),dots={};
+  [...inB].sort((a,b)=>b[4]-a[4]).forEach(st=>{
+    const c=svg("circle",{cx:sx(st[3]),cy:sy(st[2]),r:2.5+Math.sqrt(st[4]/maxN)*10,fill:ramp((st[5]-10)/30),opacity:.85,stroke:css("--surface"),"stroke-width":.8,style:"cursor:pointer"});
+    hover(c,()=>"<b>"+st[1]+"</b><br>"+fmt(st[4])+" rides<br>"+fmt1(st[5])+" min average");
+    c.addEventListener("click",()=>{state.sel=st[0];mark()});dots[st[0]]=c;s.append(c)});
+  LAND.forEach(([n,la,lo])=>{s.append(svg("circle",{cx:sx(lo),cy:sy(la),r:3,fill:css("--ink"),"pointer-events":"none"}));s.append(svg("text",{x:sx(lo)+7,y:sy(la)+4,"pointer-events":"none",style:"font-size:11px;font-weight:600;fill:"+css("--ink")+";paint-order:stroke;stroke:"+css("--surface")+";stroke-width:3.5px;stroke-linejoin:round"},[document.createTextNode(n)]))});
+  const ring=svg("circle",{r:0,fill:"none",stroke:css("--red"),"stroke-width":3,"pointer-events":"none"});s.append(ring);
+  mp.append(ctl,s);
+  const cap=document.createElement("div");cap.className="cap";cap.textContent=out?out+" station"+(out>1?"s":"")+" outside the Chicago frame (depots or test sites) are not drawn. Stations with under 20 rides are left out.":"Stations with under 20 rides are left out.";mp.append(cap);
+  g.append(mp);
+  /* ranking */
+  const rp=panel("s5","Stations ranked");
+  const c2=document.createElement("div");c2.className="row";
+  c2.append(chipRow([["long","Longest average ride"],["busy","Busiest"]],state.sort,k=>{state.sort=k;render()}));
+  const sl=document.createElement("label");sl.className="cap";sl.innerHTML='At least <b id="mv">'+state.minRides+'</b> rides <input type="range" id="mr" min="20" max="1000" step="10" value="'+state.minRides+'">';c2.append(sl);
+  const list=document.createElement("div");list.className="list";
+  const draw=()=>{list.innerHTML="";const rows=inB.filter(x=>x[4]>=state.minRides).sort((a,b)=>state.sort==="long"?b[5]-a[5]:b[4]-a[4]).slice(0,25);
+    rows.forEach((x,i)=>{const b=document.createElement("button");b.className="li";b.dataset.id=x[0];
+      b.innerHTML='<span class="r">'+(i+1)+'</span><span>'+x[1]+'<small>'+fmt(x[4])+' rides</small></span><b>'+fmt1(x[5])+' min</b>';
+      b.onclick=()=>{state.sel=x[0];mark()};b.onpointerenter=()=>{state.sel=x[0];mark(true)};list.append(b)});
+    if(!rows.length)list.innerHTML='<div class="cap">No station has that many rides. Move the slider left.</div>'};
+  const ins=document.createElement("div");ins.className="ins";
+  const top1=[...inB].filter(x=>x[4]>=100).sort((a,b)=>b[5]-a[5])[0],busy=[...inB].sort((a,b)=>b[4]-a[4])[0];
+  ins.innerHTML=top1&&busy?"<b>"+busy[1]+"</b> is the busiest "+state.role+" point ("+fmt(busy[4])+" rides). With 100+ rides, the longest average is <b>"+top1[1]+"</b> at "+fmt1(top1[5])+" min."+(state.role==="start"?" Long average rides cluster at low-traffic stations on the far south side.":""):"";
+  rp.append(c2,list,ins);g.append(rp);
+  const mark=(soft)=>{const st=inB.find(x=>x[0]===state.sel);
+    if(st){ring.setAttribute("cx",sx(st[3]));ring.setAttribute("cy",sy(st[2]));ring.setAttribute("r",2.5+Math.sqrt(st[4]/maxN)*10+4)}else ring.setAttribute("r",0);
+    list.querySelectorAll(".li").forEach(b=>b.setAttribute("aria-current",b.dataset.id===state.sel))};
+  m.append(g);draw();
+  rp.addEventListener("input",e=>{if(e.target.id==="mr"){state.minRides=+e.target.value;$("#mv").textContent=state.minRides;draw()}});
+  mark()}
+
+/* MONEY */
+function columns(items,{W=600,H=250,fmtv,tipfn,color="--sky"}){const L=48,T=14,B=28,pw=W-L-8,ph=H-T-B,mx=Math.max(...items.map(i=>i.v)),bw=pw/items.length;
+  const s=svg("svg",{viewBox:"0 0 "+W+" "+H,role:"img"});
+  [0,.5,1].forEach(t=>{const y=T+ph*(1-t);s.append(svg("line",{x1:L,x2:W-8,y1:y,y2:y,class:"axis"}));s.append(svg("text",{x:L-6,y:y+4,"text-anchor":"end"},[document.createTextNode(fmtv(mx*t))]))});
+  items.forEach((it,i)=>{const h=ph*it.v/mx,x=L+i*bw;
+    const r=svg("rect",{x:x+bw*.16,y:T+ph-h,width:bw*.68,height:h,rx:3,fill:css(color)});hover(r,()=>tipfn(it));s.append(r);
+    s.append(svg("text",{x:x+bw/2,y:H-9,"text-anchor":"middle"},[document.createTextNode(it.l)]))});return s}
+function moneyTab(m){const f=F(),g=document.createElement("div");g.className="grid";
+  const yp=panel("s6","Money collected each year");
+  const yrs=Object.keys(f.spend_year).map(Number).sort();
+  yp.append(columns(yrs.map(y=>({l:String(y),v:f.spend_year[y][1],n:f.spend_year[y][0]})),{fmtv:usdM,tipfn:i=>"<b>"+i.l+"</b><br>"+usd(i.v)+"<br>"+fmt(i.n)+" payments"}));
+  const y1=yrs[0],y2=yrs[yrs.length-2],yi=document.createElement("div");yi.className="ins";
+  yi.innerHTML="Payments from "+WHO[state.f]+" grew from <b>"+usdM(f.spend_year[y1][1])+" in "+y1+"</b> to <b>"+usdM(f.spend_year[y2][1])+" in "+y2+"</b>. 2022 holds only payments up to 1 Feb.";
+  yp.append(yi);g.append(yp);
+  const mp=panel("s6","Monthly collections, 2013 to 2022");
+  const ks=Object.keys(f.spend_month).sort(),W=600,H=250,L=48,T=14,B=28,pw=W-L-8,ph=H-T-B,mx=Math.max(...ks.map(k=>f.spend_month[k]));
+  const s=svg("svg",{viewBox:"0 0 "+W+" "+H,role:"img","aria-label":"Monthly payments"});
+  [0,.5,1].forEach(t=>{const y=T+ph*(1-t);s.append(svg("line",{x1:L,x2:W-8,y1:y,y2:y,class:"axis"}));s.append(svg("text",{x:L-6,y:y+4,"text-anchor":"end"},[document.createTextNode(usdM(mx*t))]))});
+  const px=i=>L+pw*i/(ks.length-1),py=v=>T+ph*(1-v/mx);
+  const pts=ks.map((k,i)=>[px(i),py(f.spend_month[k])]);
+  s.append(svg("polygon",{points:[[L,T+ph],...pts,[px(ks.length-1),T+ph]].map(p=>p.join(",")).join(" "),fill:css("--sky"),opacity:.18}));
+  s.append(svg("polyline",{points:pts.map(p=>p.join(",")).join(" "),fill:"none",stroke:css("--sky"),"stroke-width":2.5,"stroke-linejoin":"round"}));
+  [2013,2015,2017,2019,2021].forEach(y=>{const i=ks.findIndex(k=>k.startsWith(y+"-"));if(i>=0)s.append(svg("text",{x:px(i),y:H-9,"text-anchor":"middle"},[document.createTextNode(String(y))]))});
+  const dot=svg("circle",{r:5,fill:css("--red"),opacity:0,"pointer-events":"none"});s.append(dot);
+  const hit=svg("rect",{x:L,y:T,width:pw,height:ph,fill:"transparent"});
+  hit.addEventListener("pointermove",e=>{const r=hit.getBoundingClientRect(),i=Math.max(0,Math.min(ks.length-1,Math.round((e.clientX-r.left)/r.width*(ks.length-1))));
+    dot.setAttribute("cx",pts[i][0]);dot.setAttribute("cy",pts[i][1]);dot.setAttribute("opacity",1);showTip(e,"<b>"+mlabel(ks[i])+"</b><br>"+usd(f.spend_month[ks[i]]))});
+  hit.addEventListener("pointerleave",()=>{dot.setAttribute("opacity",0);hideTip()});s.append(hit);
+  const mi=document.createElement("div");mi.className="ins";
+  mi.innerHTML="Monthly collections climb with the number of paying riders. Every payment is dated the 1st of the month, so each point is one billing day.";
+  mp.append(s,mi);g.append(mp);
+  const ap=panel("s7","Spend per rider by age when the account started");
+  const rows=DATA.meta.labels.map(l=>({l,v:(f.spend_age[l]||[0,0,0])[2],n:(f.spend_age[l]||[0,0,0])[0]}));
+  ap.append(hbars(rows,{max:Math.max(...rows.map(r=>r.v))*1.05,fmtv:v=>usd(v),red:true,tipfn:r=>"<b>Age "+r.l+" at account start</b><br>"+fmt(r.n)+" riders<br>"+usd(r.v,2)+" paid per rider"}));
+  const a1=rows[0],a2=rows[rows.length-1],ai=document.createElement("div");ai.className="ins";
+  ai.innerHTML="Riders who joined under 18 paid <b>"+usd(a1.v)+"</b> on average, against <b>"+usd(a2.v)+"</b> for riders who joined at 65 or older. These are lifetime totals, so riders who joined earlier have had more months to pay.";
+  ap.append(ai);g.append(ap);
+  const cp=panel("s5","Members vs casual: how much per payment");
+  const mem=DATA.f.member,cas=DATA.f.casual;
+  const cb=hbars([{l:"Members",v:mem.avg_payment},{l:"Casual",v:cas.avg_payment}],{max:16,fmtv:v=>usd(v,2),tipfn:r=>"<b>"+r.l+"</b><br>"+usd(r.v,2)+" per payment"});
+  const ci=document.createElement("div");ci.className="ins";
+  ci.innerHTML="Members pay a flat <b>"+usd(mem.avg_payment,2)+"</b> a month. Casual riders pay between $3 and $25 and average <b>"+usd(cas.avg_payment,2)+"</b>. This view ignores the rider-type filter, since it compares the two.";
+  cp.append(cb,ci);g.append(cp);m.append(g)}
+
+/* USAGE VS SPEND */
+function usageTab(m){const g=document.createElement("div");g.className="grid";
+  const note=panel("s12","Does riding more mean paying more?");
+  const n=document.createElement("div");n.className="ins";
+  n.innerHTML="Not in this data. Riders who ride 1 to 3 times a month and riders who ride 11 or more times pay about the same, <b>$5.90 to $6.96 per active month</b>. The highest averages, about $10, belong to riders who barely ride and to months with no riding at all. This view uses all riders and ignores the filter.";
+  note.append(n);g.append(note);
+  const a=panel("s6","Average monthly spend by rides per month");
+  a.append(hbars(USAGE.rides.map(r=>({l:r[0],v:r[2],n:r[1]})),{max:12,fmtv:v=>usd(v,2),tipfn:r=>"<b>"+r.l+"</b><br>"+fmt(r.n)+" riders<br>"+usd(r.v,2)+" per month"}));
+  const ac=document.createElement("div");ac.className="cap";ac.textContent="Each rider's average over the months they rode or paid, Feb 2021 to Jan 2022. Rides and payments are summed per rider-month first, so no payment is tied to a single ride.";a.append(ac);g.append(a);
+  const b=panel("s6","Average spend in a month by minutes ridden");
+  b.append(hbars(USAGE.mins.map(r=>({l:r[0],v:r[2],n:r[1]})),{max:12,fmtv:v=>usd(v,2),red:true,tipfn:r=>"<b>"+r.l+"</b><br>"+fmt(r.n)+" rider-months<br>"+usd(r.v,2)+" per month"}));
+  const bc=document.createElement("div");bc.className="cap";bc.textContent="Why? 63% of paid rider-months contain no rides, and 31% of ride-months have no payment. The course data does not link payments to usage, so read this as a property of the data, not of riders.";b.append(bc);g.append(b);m.append(g)}
+
+/* PIPELINE & CHECKS */
+function qualityTab(m){const g=document.createElement("div"),d=DATA.meta;g.className="grid";
+  const pp=panel("s12","How the data got here");
+  const st=document.createElement("div");st.className="steps";
+  [["PostgreSQL","4 source tables · "+fmt(d.trips_total)+" trips"],["Synapse Ingest","one-time copy to the data lake · 4 text files"],["External tables","4 staging tables over the files"],["CETAS","2 facts and 3 dimensions as Parquet"],["Validation","26 of 26 checks pass"]].forEach(([a,b])=>{
+    const x=document.createElement("div");x.className="step";x.innerHTML="<b>"+a+"</b><span>"+b+"</span>";st.append(x)});
+  pp.append(st);g.append(pp);
+  const dq=panel("s6","Trip durations");
+  const I=d.issues,tot=I.ok+I.negative+I.zero+I.over_24h,col={ok:"--sky",negative:"--red",zero:"--warn",over_24h:"--navy"};
+  const bar=document.createElement("div");bar.className="stack";
+  Object.keys(I).forEach(k=>{const i=document.createElement("i");i.style.width=Math.max(.4,I[k]/tot*100)+"%";i.style.background=css(col[k]);hover(i,()=>"<b>"+k.replace("_"," ")+"</b><br>"+fmt(I[k])+" trips");bar.append(i)});
+  dq.append(bar);
+  const li=document.createElement("div");li.className="bars";
+  [["Valid (0 to 24 h)",I.ok,"--sky"],["Ended before it started",I.negative,"--red"],["Zero length",I.zero,"--warn"],["Longer than 24 h",I.over_24h,"--navy"]].forEach(([l,v,c])=>{
+    const r=document.createElement("div");r.className="bar";r.style.gridTemplateColumns="1fr auto";r.innerHTML='<span><i style="display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:8px;background:'+css(c)+'"></i>'+l+'</span><b>'+fmt(v)+'</b>';li.append(r)});
+  dq.append(li);
+  const di=document.createElement("div");di.className="ins";di.innerHTML="<b>"+fmt(I.negative+I.zero+I.over_24h)+" trips</b> have a bad duration. They stay in the fact table with a flag, so counts match the source, and reports leave them out.";dq.append(di);g.append(dq);
+  const cp=panel("s6","Automated checks");
+  const ck=document.createElement("div");ck.className="checks";
+  CHECKS.forEach(([l,n])=>{const x=document.createElement("div");x.className="check";x.innerHTML="<i>PASS</i><span>"+l+" <span class='cap'>("+n+")</span></span>";ck.append(x)});
+  const ci=document.createElement("div");ci.className="ins";ci.innerHTML="Expected values came from profiling the raw files before building anything, so a check passes only when the warehouse matches the source.";
+  cp.append(ck,ci);g.append(cp);m.append(g)}
+
+
+/* commute / mix helpers */
+function commuteChart(f){const H=f.heat,W=600,Ht=240,L=40,T=14,Bm=28,pw=W-L-10,ph=Ht-T-Bm;
+  const wk=Array(24).fill(0),we=Array(24).fill(0);H.forEach((row,d)=>row.forEach((c,h)=>{(d<5?wk:we)[h]+=c[0]}));
+  const tw=wk.reduce((a,b)=>a+b,0)||1,te=we.reduce((a,b)=>a+b,0)||1,A=wk.map(v=>v/tw*100),Z=we.map(v=>v/te*100),mx=Math.max(...A,...Z)*1.1;
+  const s=svg("svg",{viewBox:"0 0 "+W+" "+Ht,role:"img","aria-label":"Share of rides by start hour"});
+  [0,.5,1].forEach(t=>{const y=T+ph*(1-t);s.append(svg("line",{x1:L,x2:W-10,y1:y,y2:y,class:"axis"}));s.append(svg("text",{x:L-6,y:y+4,"text-anchor":"end"},[document.createTextNode((mx*t).toFixed(1)+"%")]))});
+  const px=h=>L+pw*h/23,py=v=>T+ph*(1-v/mx);
+  [[A,"--red"],[Z,"--sky"]].forEach(([arr,c])=>{const pts=arr.map((v,h)=>[px(h),py(v)]);
+    s.append(svg("polygon",{points:[[L,T+ph],...pts,[px(23),T+ph]].map(p=>p.join(",")).join(" "),fill:css(c),opacity:.1}));
+    s.append(svg("polyline",{points:pts.map(p=>p.join(",")).join(" "),fill:"none",stroke:css(c),"stroke-width":2.5,"stroke-linejoin":"round"}))});
+  [0,6,12,18,23].forEach(h=>s.append(svg("text",{x:px(h),y:Ht-9,"text-anchor":"middle"},[document.createTextNode(String(h).padStart(2,"0")+":00")])));
+  const dot=svg("line",{y1:T,y2:T+ph,stroke:css("--muted"),"stroke-dasharray":"3 3",opacity:0,"pointer-events":"none"});s.append(dot);
+  const hit=svg("rect",{x:L,y:T,width:pw,height:ph,fill:"transparent"});
+  hit.addEventListener("pointermove",e=>{const r=hit.getBoundingClientRect(),h=Math.max(0,Math.min(23,Math.round((e.clientX-r.left)/r.width*23)));
+    dot.setAttribute("x1",px(h));dot.setAttribute("x2",px(h));dot.setAttribute("opacity",1);
+    showTip(e,"<b>"+String(h).padStart(2,"0")+":00</b><br>Weekdays "+A[h].toFixed(1)+"% of rides<br>Weekends "+Z[h].toFixed(1)+"% of rides")});
+  hit.addEventListener("pointerleave",()=>{dot.setAttribute("opacity",0);hideTip()});s.append(hit);
+  const am=A.slice(5,11).reduce((b,v,i)=>v>A[b]?i+5:b,5);
+  return{node:s,pk:[A.indexOf(Math.max(...A)),Z.indexOf(Math.max(...Z))],am}}
+function mixChart(f){const ms=Object.keys(f.type_month).sort(),TY=["classic_bike","electric_bike","docked_bike"],CO=["--sky","--red","--warn"],NM=["Classic","Electric","Docked"];
+  const W=640,H=240,L=40,T=10,Bm=28,pw=W-L-8,ph=H-T-Bm,bw=pw/ms.length;
+  const s=svg("svg",{viewBox:"0 0 "+W+" "+H,role:"img","aria-label":"Share of rides by bike type per month"});
+  [0,.5,1].forEach(t=>{const y=T+ph*(1-t);s.append(svg("line",{x1:L,x2:W-8,y1:y,y2:y,class:"axis"}));s.append(svg("text",{x:L-6,y:y+4,"text-anchor":"end"},[document.createTextNode(Math.round(t*100)+"%")]))});
+  ms.forEach((k,i)=>{const d=f.type_month[k],tot=TY.reduce((a,t)=>a+(d[t]||0),0)||1;let y=T+ph;
+    TY.forEach((t,j)=>{const h=ph*(d[t]||0)/tot;y-=h;if(h>0)s.append(svg("rect",{x:L+i*bw+bw*.14,y,width:bw*.72,height:h,fill:css(CO[j])}))});
+    s.append(svg("text",{x:L+i*bw+bw/2,y:H-9,"text-anchor":"middle"},[document.createTextNode(mlabel(k))]));
+    const hit=svg("rect",{x:L+i*bw,y:T,width:bw,height:ph,fill:"transparent"});
+    hover(hit,()=>"<b>"+mlabel(k)+"</b><br>"+TY.map((t,j)=>NM[j]+" "+fmt(d[t]||0)+" ("+((d[t]||0)/tot*100).toFixed(0)+"%)").join("<br>"));s.append(hit)});
+  const lg=document.createElement("div");lg.className="lgd";lg.innerHTML=TY.map((t,j)=>'<span style="--c:var('+CO[j]+')">'+NM[j]+'</span>').join("");
+  const sh=k=>{const d=f.type_month[k],tot=TY.reduce((a,t)=>a+(d[t]||0),0)||1;return(d.electric_bike||0)/tot*100},sd=k=>{const d=f.type_month[k],tot=TY.reduce((a,t)=>a+(d[t]||0),0)||1;return(d.docked_bike||0)/tot*100};
+  const tt=Object.values(f.type_month).reduce((a,d)=>a+(d.electric_bike||0),0)/Object.values(f.type_month).reduce((a,d)=>a+TY.reduce((x,t)=>x+(d[t]||0),0),0)*100;
+  return{node:s,legend:lg,text:"Electric bikes are <b>"+tt.toFixed(0)+"%</b> of "+WHO[state.f]+"' rides over the year, from <b>"+sh(ms[0]).toFixed(0)+"%</b> in "+mlabel(ms[0])+" to <b>"+sh(ms[ms.length-1]).toFixed(0)+"%</b> in "+mlabel(ms[ms.length-1])+". Docked bikes make up "+sd(ms[0]).toFixed(0)+"% in "+mlabel(ms[0])+" and "+sd(ms[ms.length-1]).toFixed(0)+"% in "+mlabel(ms[ms.length-1])+"."}}
+function divColor(t){const k=Math.min(1,Math.abs(t)/0.12),n=hex(css("--line")),c=hex(css(t<0?"--red":"--sky"));return"rgb("+[0,1,2].map(i=>Math.round(n[i]+(c[i]-n[i])*k)).join(",")+")"}
+function areaChart(ks,vals,{fmtv,color="--sky",ticks=[],lab}){const W=600,H=250,L=48,T=14,Bm=28,pw=W-L-8,ph=H-T-Bm,mx=Math.max(...vals)*1.05||1;
+  const s=svg("svg",{viewBox:"0 0 "+W+" "+H,role:"img"});
+  [0,.5,1].forEach(t=>{const y=T+ph*(1-t);s.append(svg("line",{x1:L,x2:W-8,y1:y,y2:y,class:"axis"}));s.append(svg("text",{x:L-6,y:y+4,"text-anchor":"end"},[document.createTextNode(fmtv(mx*t))]))});
+  const px=i=>L+pw*i/(ks.length-1),py=v=>T+ph*(1-v/mx),pts=vals.map((v,i)=>[px(i),py(v)]);
+  s.append(svg("polygon",{points:[[L,T+ph],...pts,[px(ks.length-1),T+ph]].map(p=>p.join(",")).join(" "),fill:css(color),opacity:.18}));
+  s.append(svg("polyline",{points:pts.map(p=>p.join(",")).join(" "),fill:"none",stroke:css(color),"stroke-width":2.5,"stroke-linejoin":"round"}));
+  ticks.forEach(y=>{const i=ks.findIndex(k=>k.startsWith(y+"-"));if(i>=0)s.append(svg("text",{x:px(i),y:H-9,"text-anchor":"middle"},[document.createTextNode(String(y))]))});
+  const dot=svg("circle",{r:5,fill:css("--red"),opacity:0,"pointer-events":"none"});s.append(dot);
+  const hit=svg("rect",{x:L,y:T,width:pw,height:ph,fill:"transparent"});
+  hit.addEventListener("pointermove",e=>{const r=hit.getBoundingClientRect(),i=Math.max(0,Math.min(ks.length-1,Math.round((e.clientX-r.left)/r.width*(ks.length-1))));
+    dot.setAttribute("cx",pts[i][0]);dot.setAttribute("cy",pts[i][1]);dot.setAttribute("opacity",1);showTip(e,"<b>"+mlabel(ks[i])+"</b><br>"+lab(vals[i]))});
+  hit.addEventListener("pointerleave",()=>{dot.setAttribute("opacity",0);hideTip()});s.append(hit);return s}
+
+/* FLOW & ROUTES */
+function flowTab(m){const f=F(),g=document.createElement("div"),idx={};g.className="grid";
+  f.stations.start.forEach(x=>{idx[x[0]]={id:x[0],name:x[1],lat:x[2],lon:x[3],st:x[4],en:0}});
+  f.stations.end.forEach(x=>{const r=idx[x[0]]||(idx[x[0]]={id:x[0],name:x[1],lat:x[2],lon:x[3],st:0,en:0});r.en=x[4]});
+  const rows=Object.values(idx).filter(r=>r.lat>=BOUNDS.la0&&r.lat<=BOUNDS.la1&&r.lon>=BOUNDS.lo0&&r.lon<=BOUNDS.lo1&&r.st+r.en>=state.flowMin);
+  rows.forEach(r=>{r.net=r.en-r.st;r.tot=r.st+r.en;r.ratio=r.net/r.tot});
+  const mp=panel("s7","Where bikes pile up and where they run short");
+  const ctl=document.createElement("div");ctl.className="row";
+  const sl=document.createElement("label");sl.className="cap";sl.innerHTML='Stations with at least <b id="fv">'+fmt(state.flowMin)+'</b> rides <input type="range" id="fr" min="100" max="5000" step="100" value="'+state.flowMin+'">';ctl.append(sl);
+  const lg=document.createElement("div");lg.className="legend";lg.innerHTML="<span>more leave</span><i class='div'></i><span>more arrive</span><span>(saturates at ±12% of a station's rides)</span>";ctl.append(lg);
+  const W=380,H=700,sx=lo=>(lo-BOUNDS.lo0)/(BOUNDS.lo1-BOUNDS.lo0)*W,sy=la=>(BOUNDS.la1-la)/(BOUNDS.la1-BOUNDS.la0)*H;
+  const s=svg("svg",{viewBox:"0 0 "+W+" "+H,role:"img","aria-label":"Net bike flow by station"});s.style.maxHeight="640px";s.style.margin="0 auto";s.style.maxWidth="360px";
+  s.append(svg("rect",{x:0,y:0,width:W,height:H,rx:8,fill:css("--bg")}));s.append(svg("rect",{x:W-52,y:0,width:52,height:H,fill:css("--sky"),opacity:.08}));
+  s.append(svg("text",{x:W-22,y:H/2,"text-anchor":"middle",transform:"rotate(90 "+(W-22)+" "+H/2+")",style:"letter-spacing:.3em;font-size:12px"},[document.createTextNode("LAKE MICHIGAN")]));
+  const mx=Math.max(1,...rows.map(r=>r.tot));
+  [...rows].sort((a,b)=>b.tot-a.tot).forEach(r=>{const c=svg("circle",{cx:sx(r.lon),cy:sy(r.lat),r:2.5+Math.sqrt(r.tot/mx)*10,fill:divColor(r.ratio),stroke:css("--muted"),"stroke-width":.5,opacity:.95});
+    hover(c,()=>"<b>"+r.name+"</b><br>"+fmt(r.st)+" start here, "+fmt(r.en)+" end here<br>"+(r.net>=0?"+":"")+fmt(r.net)+" net ("+(r.net>=0?"bikes pile up":"bikes run short")+")");s.append(c)});
+  LAND.forEach(([n,la,lo])=>{s.append(svg("circle",{cx:sx(lo),cy:sy(la),r:3,fill:css("--ink"),"pointer-events":"none"}));s.append(svg("text",{x:sx(lo)+7,y:sy(la)+4,"pointer-events":"none",style:"font-size:11px;font-weight:600;fill:"+css("--ink")+";paint-order:stroke;stroke:"+css("--surface")+";stroke-width:3.5px;stroke-linejoin:round"},[document.createTextNode(n)]))});
+  mp.append(ctl,s);
+  const cap=document.createElement("div");cap.className="cap";cap.textContent="Net flow = rides ending at a station minus rides starting there, over the year. Dot size is total rides.";mp.append(cap);g.append(mp);
+  const lp=panel("s5","Rebalancing watch list");
+  lp.append(chipRow([["short","Running short"],["full","Filling up"]],state.flowMode,k=>{state.flowMode=k;render()}));
+  const top=[...rows].sort((a,b)=>state.flowMode==="short"?a.net-b.net:b.net-a.net).slice(0,10);
+  const mxn=Math.max(1,...top.map(r=>Math.abs(r.net)));
+  const bx=hbars(top.map(r=>({l:r.name,v:Math.abs(r.net),r})),{max:mxn*1.05,fmtv:fmt,red:state.flowMode==="short",tipfn:o=>"<b>"+o.r.name+"</b><br>"+fmt(o.r.st)+" start, "+fmt(o.r.en)+" end<br>net "+(o.r.net>=0?"+":"")+fmt(o.r.net)});
+  bx.querySelectorAll(".bar").forEach(b=>b.style.gridTemplateColumns="minmax(120px,190px) 1fr minmax(48px,auto)");lp.append(bx);
+  const t1=top[0],ins=document.createElement("div");ins.className="ins";
+  ins.innerHTML=t1?(state.flowMode==="short"?"<b>"+t1.name+"</b> loses the most bikes: "+fmt(t1.st)+" rides start there and "+fmt(t1.en)+" end there, a net of <b>"+fmt(t1.net)+"</b>. A depot would need to deliver bikes here.":"<b>"+t1.name+"</b> collects the most bikes: "+fmt(t1.en)+" rides end there and "+fmt(t1.st)+" start there, a net of <b>+"+fmt(t1.net)+"</b>. A depot would need to remove bikes here."):"No stations match. Lower the minimum.";
+  lp.append(ins);g.append(lp);
+  /* routes */
+  const rp=panel("s12","Most common routes");
+  rp.append(chipRow([["p2p","Point to point"],["round","Round trips (same station)"]],state.routeMode,k=>{state.routeMode=k;render()}));
+  const list=f.routes[state.routeMode],rx=Math.max(...list.map(x=>x[2])),box=document.createElement("div");
+  list.slice(0,10).forEach((x,i)=>{const d=document.createElement("div");d.className="rt";
+    d.innerHTML='<span class="r">'+(i+1)+'</span><span class="n"><b>'+x[0]+'</b> <i>'+(state.routeMode==="p2p"?"to":"and back")+'</i> '+(state.routeMode==="p2p"?x[1]:"")+'</span><b>'+fmt(x[2])+'</b><span class="t"><i style="width:'+(x[2]/rx*100)+'%"></i></span><small>'+fmt1(x[3])+' min average</small>';
+    hover(d,()=>"<b>"+x[0]+(state.routeMode==="p2p"?" to "+x[1]:" round trip")+"</b><br>"+fmt(x[2])+" rides, "+fmt1(x[3])+" min average");box.append(d)});
+  const ri=document.createElement("div");ri.className="ins";const a=list[0];
+  ri.innerHTML="<b>"+(f.routes.round_share*100).toFixed(1)+"%</b> of "+WHO[state.f]+"' rides start and end at the same station. "+(state.routeMode==="p2p"?"The most ridden point-to-point route is <b>"+a[0]+" to "+a[1]+"</b> ("+fmt(a[2])+" rides, "+fmt1(a[3])+" min).":"The top round-trip station is <b>"+a[0]+"</b> ("+fmt(a[2])+" rides averaging "+fmt1(a[3])+" min), typical of leisure rides along the lakefront.");
+  rp.append(box,ri);g.append(rp);m.append(g);
+  rp.parentNode.querySelector("#fr").addEventListener("input",e=>{state.flowMin=+e.target.value;$("#fv").textContent=fmt(state.flowMin)});
+  rp.parentNode.querySelector("#fr").addEventListener("change",()=>render())}
+
+/* RIDERS */
+function ridersTab(m){const f=F(),g=document.createElement("div");g.className="grid";
+  const yrs=Object.keys(f.opened).map(Number).sort(),op=y=>f.opened[y]||0,cl=y=>f.closed[y]||0;
+  const gp=panel("s6","Accounts opened and closed each year");
+  const W=600,H=250,L=48,T=14,Bm=28,pw=W-L-8,ph=H-T-Bm,mx=Math.max(...yrs.map(y=>Math.max(op(y),cl(y))))*1.05,bw=pw/yrs.length,s=svg("svg",{viewBox:"0 0 "+W+" "+H,role:"img"});
+  [0,.5,1].forEach(t=>{const y=T+ph*(1-t);s.append(svg("line",{x1:L,x2:W-8,y1:y,y2:y,class:"axis"}));s.append(svg("text",{x:L-6,y:y+4,"text-anchor":"end"},[document.createTextNode(fmt(mx*t))]))});
+  yrs.forEach((y,i)=>{[[op(y),"--sky",0],[cl(y),"--red",1]].forEach(([v,c,j])=>{const h=ph*v/mx,x=L+i*bw+bw*.12+j*bw*.38;
+      const r=svg("rect",{x,y:T+ph-h,width:bw*.36,height:h,rx:2,fill:css(c)});hover(r,()=>"<b>"+y+"</b><br>"+fmt(v)+(j?" accounts closed":" accounts opened"));s.append(r)});
+    s.append(svg("text",{x:L+i*bw+bw/2,y:H-9,"text-anchor":"middle"},[document.createTextNode(String(y))]))});
+  const lg=document.createElement("div");lg.className="lgd";lg.innerHTML='<span style="--c:var(--sky)">Opened</span><span style="--c:var(--red)">Closed</span>';
+  const to=yrs.reduce((a,y)=>a+op(y),0),tc=yrs.reduce((a,y)=>a+cl(y),0),pk=yrs.reduce((a,y)=>op(y)>op(a)?y:a,yrs[0]);
+  const gi=document.createElement("div");gi.className="ins";gi.innerHTML="<b>"+fmt(to)+"</b> accounts were opened from "+yrs[0]+" to "+yrs[yrs.length-1]+", most in <b>"+pk+"</b> ("+fmt(op(pk))+"). <b>"+fmt(tc)+"</b> ("+(tc/to*100).toFixed(0)+"%) have a valid end date. The last year only runs to 12 Feb 2022.";
+  gp.append(lg,s,gi);g.append(gp);
+  const ap=panel("s6","Active accounts over time");
+  const ks=Object.keys(f.active).sort(),vals=ks.map(k=>f.active[k]);
+  ap.append(areaChart(ks,vals,{fmtv:fmt,color:"--sky",ticks:[2013,2015,2017,2019,2021],lab:v=>fmt(v)+" active accounts"}));
+  const pi=vals.indexOf(Math.max(...vals)),ai=document.createElement("div");ai.className="ins";
+  ai.innerHTML="An account counts as active in a month between its start and end dates. <b>"+fmt(vals[vals.length-1])+"</b> of "+WHO[state.f]+"' accounts are active in "+mlabel(ks[ks.length-1])+", against a peak of <b>"+fmt(vals[pi])+"</b> in "+mlabel(ks[pi])+".";
+  const cv=document.createElement("div");cv.className="cap";cv.textContent=fmt(f.invalid_accounts)+" accounts end before they start in the source data. They are never counted as active and not counted as closed.";
+  ap.append(ai,cv);g.append(ap);m.append(g)}
+
+/* render + routing */
+function render(){RS=null;const m=$("#main");m.innerHTML="";hideTip();kpis();
+  ({rides:ridesTab,stations:stationsTab,flow:flowTab,money:moneyTab,riders:ridersTab,usage:usageTab,quality:qualityTab})[state.tab](m);
+  $("#seg").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.f===state.f));
+  $("#tabs").querySelectorAll("button").forEach(b=>b.setAttribute("aria-selected",b.dataset.t===state.tab))}
+$("#seg").addEventListener("click",e=>{const b=e.target.closest("button");if(b){state.f=b.dataset.f;render()}});
+$("#tabs").addEventListener("click",e=>{const b=e.target.closest("button");if(b){state.tab=b.dataset.t;history.replaceState(null,"","#"+state.tab);render()}});
+addEventListener("hashchange",()=>{const t=location.hash.slice(1);if(TABS.includes(t)){state.tab=t;render()}});
+const t0=location.hash.slice(1);if(TABS.includes(t0))state.tab=t0;
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>render());
+new MutationObserver(()=>render()).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+render();
+</script>
