@@ -75,7 +75,7 @@ TEXT_SAMPLES = [".kpi .l", ".kpi .n", ".kpi .v", ".panel h2", ".panel .ins", ".p
 
 def text_contrast(page):
     """(selector, ratio) for sample text elements: computed colour against the first opaque background above it."""
-    return page.evaluate("""(sels) => {
+    return page.evaluate(r"""(sels) => {
       const parse = c => { const m = c.match(/rgba?\(([^)]+)\)/); if (!m) return null; const p = m[1].split(',').map(Number); return {r:p[0], g:p[1], b:p[2], a:p.length>3?p[3]:1}; };
       const bgOf = el => { for (let e = el; e; e = e.parentElement) { const c = parse(getComputedStyle(e).backgroundColor); if (c && c.a > 0.99) return c; } return {r:255,g:255,b:255,a:1}; };
       return sels.map(s => { const el = document.querySelector(s); if (!el) return [s, null]; const fg = parse(getComputedStyle(el).color), bg = bgOf(el); return [s, [fg.r, fg.g, fg.b, bg.r, bg.g, bg.b]]; });
