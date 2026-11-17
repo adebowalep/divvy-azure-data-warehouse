@@ -1,0 +1,9 @@
+# Extra tools for the browser tests and screenshots (optional):
+#   tests/smoke_dashboard.py          Playwright + a Chromium-based browser
+#   dashboard/capture_screenshots.py  Playwright; Pillow is optional (shrinks the PNG files)
+#   diagram/make_architecture.py      Playwright and Pillow are optional (only for the PNG copy)
+#
+# Tested with Playwright 1.65.2 driving a Chromium build, and Pillow 13.0.0.
+-r requirements.txt
+playwright>=1.65,<2
+pillow>=10

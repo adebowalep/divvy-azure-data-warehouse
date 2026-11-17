@@ -1,0 +1,10 @@
+# Runtime dependencies for the local tools:
+#   dashboard/build_data.py       pandas, numpy   (aggregates the source CSVs into dashboard/data.json)
+#   diagram/make_star_schema_pdf.py   matplotlib   (draws the star-schema PDF/PNG)
+# dashboard/make_dashboard.py, diagram/make_architecture.py and tests/check_project.py use only the standard library.
+#
+# Developed and tested with Python 3.12.7, pandas 2.2.3, numpy 1.26.4 and matplotlib 3.9.2.
+# The upper bounds are conservative: newer major versions have not been tried.
+pandas>=2.2,<3
+numpy>=1.26,<2
+matplotlib>=3.9,<4
