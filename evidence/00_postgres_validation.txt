@@ -1,0 +1,96 @@
+   tbl   | row_count 
+---------+-----------
+ rider   |     75000
+ payment |   1946607
+ station |       838
+ trip    |   4584921
+(4 rows)
+
+ table_name |    column_name     |          data_type          
+------------+--------------------+-----------------------------
+ payment    | payment_id         | integer
+ payment    | date               | date
+ payment    | amount             | money
+ payment    | rider_id           | integer
+ rider      | rider_id           | integer
+ rider      | first              | character varying
+ rider      | last               | character varying
+ rider      | address            | character varying
+ rider      | birthday           | date
+ rider      | account_start_date | date
+ rider      | account_end_date   | date
+ rider      | is_member          | boolean
+ station    | station_id         | character varying
+ station    | name               | character varying
+ station    | latitude           | double precision
+ station    | longitude          | double precision
+ trip       | trip_id            | character varying
+ trip       | rideable_type      | character varying
+ trip       | start_at           | timestamp without time zone
+ trip       | ended_at           | timestamp without time zone
+ trip       | start_station_id   | character varying
+ trip       | end_station_id     | character varying
+ trip       | rider_id           | integer
+(23 rows)
+
+ rider_id |  first   |   last    |          address          |  birthday  | account_start_date | account_end_date | is_member 
+----------+----------+-----------+---------------------------+------------+--------------------+------------------+-----------
+     1000 | Diana    | Clark     | 1200 Alyssa Squares       | 1989-02-13 | 2019-04-23         |                  | t
+     1001 | Jennifer | Smith     | 397 Diana Ferry           | 1976-08-10 | 2019-11-01         | 2020-09-01       | t
+     1002 | Karen    | Smith     | 644 Brittany Row Apt. 097 | 1998-08-10 | 2022-02-04         |                  | t
+     1003 | Bryan    | Roberts   | 996 Dickerson Turnpike    | 1999-03-29 | 2019-08-26         |                  | f
+     1004 | Jesse    | Middleton | 7009 Nathan Expressway    | 1969-04-11 | 2019-09-14         |                  | t
+(5 rows)
+
+ payment_id |    date    | amount | rider_id 
+------------+------------+--------+----------
+          1 | 2019-05-01 |  $9.00 |     1000
+          2 | 2019-06-01 |  $9.00 |     1000
+          3 | 2019-07-01 |  $9.00 |     1000
+          4 | 2019-08-01 |  $9.00 |     1000
+          5 | 2019-09-01 |  $9.00 |     1000
+(5 rows)
+
+  station_id  |            name            |     latitude      |     longitude      
+--------------+----------------------------+-------------------+--------------------
+ 525          | Glenwood Ave & Touhy Ave   |         42.012701 | -87.66605799999999
+ KA1503000012 | Clark St & Lake St         | 41.88579466666667 | -87.63110066666668
+ 637          | Wood St & Chicago Ave      |         41.895634 |         -87.672069
+ 13216        | State St & 33rd St         |        41.8347335 |        -87.6258275
+ 18003        | Fairbanks St & Superior St | 41.89580766666667 | -87.62025316666669
+(5 rows)
+
+     trip_id      | rideable_type |      start_at       |      ended_at       | start_station_id | end_station_id | rider_id 
+------------------+---------------+---------------------+---------------------+------------------+----------------+----------
+ 89E7AA6C29227EFF | classic_bike  | 2021-02-12 16:14:56 | 2021-02-12 16:21:43 | 525              | 660            |    71934
+ 0FEFDE2603568365 | classic_bike  | 2021-02-14 17:52:38 | 2021-02-14 18:12:09 | 525              | 16806          |    47854
+ E6159D746B2DBB91 | electric_bike | 2021-02-09 19:10:18 | 2021-02-09 19:19:10 | KA1503000012     | TA1305000029   |    70870
+ B32D3199F1C2E75B | classic_bike  | 2021-02-02 17:49:41 | 2021-02-02 17:54:06 | 637              | TA1305000034   |    58974
+ 83E463F23575F4BF | electric_bike | 2021-02-23 15:07:23 | 2021-02-23 15:22:37 | 13216            | TA1309000055   |    39608
+(5 rows)
+
+ dup_rider_id | dup_payment_id | dup_station_id | dup_trip_id | open_accounts 
+--------------+----------------+----------------+-------------+---------------
+            0 |              0 |              0 |           0 |         60046
+(1 row)
+
+ orphan_start_station | orphan_end_station | orphan_trip_rider | orphan_payment_rider 
+----------------------+--------------------+-------------------+----------------------
+                    0 |                  0 |                 0 |                    0
+(1 row)
+
+ negative_duration | zero_duration | over_24h |     first_trip      |      last_trip      
+-------------------+---------------+----------+---------------------+---------------------
+               116 |            81 |     1277 | 2021-02-01 01:07:04 | 2022-01-31 23:58:37
+(1 row)
+
+ account_end_before_start 
+--------------------------
+                     1033
+(1 row)
+
+ min_amount | max_amount |  total_amount  
+------------+------------+----------------
+      $3.00 |     $25.00 | $19,457,105.25
+(1 row)
+
