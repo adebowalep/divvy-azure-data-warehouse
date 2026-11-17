@@ -4,6 +4,7 @@
     python tests/smoke_dashboard.py
 
 The page is opened from disk (file://), so nothing needs a server or an Azure connection.
+Set DIVVY_URL=https://.../dashboard/ to run the same checks against a deployed copy.
 Set DIVVY_BROWSER=/path/to/chromium-or-chrome if Playwright cannot find a browser by itself.
 Exit code 0 = every check passed, 1 = a check failed, 2 = Playwright or a browser is not available (skipped).
 """
@@ -14,7 +15,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-PAGE = (ROOT / "dashboard" / "index.html").as_uri()
+PAGE = os.environ.get("DIVVY_URL") or (ROOT / "dashboard" / "index.html").as_uri()  # set DIVVY_URL to test a deployed copy
 DATA = json.loads((ROOT / "dashboard" / "data.json").read_text())
 TABS = ["rides", "stations", "flow", "money", "riders", "usage", "quality"]
 FILTERS = ["all", "member", "casual"]
