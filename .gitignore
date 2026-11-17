@@ -9,7 +9,5 @@ __pycache__/
 
 # Modified copy of Udacity's CC BY-NC-ND starter script: kept locally only
 starter/ProjectDataToPostgres.py
-# Generated copy used for the hosted artifact
-dashboard/artifact.html
 # Personal drafts
 LINKEDIN_POST.md
